@@ -11,16 +11,18 @@ public class MapViewModel : INotifyPropertyChanged
     private readonly LocationService _locationService;
     private readonly GeofenceService _geofenceService;
     private readonly PoiDatabase _db;
-
+    private readonly AudioService _audioService;
 
     public MapViewModel(
-    LocationService locationService,
-    GeofenceService geofenceService,
-    PoiDatabase db)
+        LocationService locationService,
+        GeofenceService geofenceService,
+        PoiDatabase db,
+        AudioService audioService)
     {
         _locationService = locationService;
         _geofenceService = geofenceService;
         _db = db;
+        _audioService = audioService;
     }
 
     private Location? _currentLocation;
@@ -58,6 +60,16 @@ public class MapViewModel : INotifyPropertyChanged
     public event PropertyChangedEventHandler? PropertyChanged;
     void OnPropertyChanged([CallerMemberName] string name = "")
         => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+
+    public async Task PlayPoiAsync(Poi poi, string lang = "en")
+    {
+        var text = poi.GetDescription(lang);
+        if (string.IsNullOrWhiteSpace(text))
+            text = poi.GetName(lang);
+
+        if (!string.IsNullOrWhiteSpace(text))
+            await _audioService.SpeakAsync(text);
+    }
 
     public async Task LoadPoisAsync()
     {

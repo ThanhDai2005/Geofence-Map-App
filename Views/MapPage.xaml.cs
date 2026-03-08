@@ -1,4 +1,5 @@
-﻿using MauiApp1.ViewModels;
+﻿using MauiApp1.Models;
+using MauiApp1.ViewModels;
 using Microsoft.Maui.Controls.Maps;
 using Microsoft.Maui.Maps;
 
@@ -11,12 +12,27 @@ public partial class MapPage : ContentPage
     private bool _isTracking;
     private bool _poisDrawn;
     private CancellationTokenSource? _cts;
-
+    private readonly Dictionary<Pin, Poi> _pinToPoi = new();
 
     public MapPage(MapViewModel vm)
     {
         InitializeComponent();
         BindingContext = _vm = vm;
+    }
+
+    private async void OnPinMarkerClicked(object? sender, PinClickedEventArgs e)
+    {
+        if (sender is not Pin pin) return;
+
+        if (_pinToPoi.TryGetValue(pin, out var poi))
+        {
+            Map.MoveToRegion(MapSpan.FromCenterAndRadius(
+                pin.Location, Distance.FromMeters(200)));
+
+            await _vm.PlayPoiAsync(poi, "en");
+
+            e.HideInfoWindow = true;
+        }
     }
 
     protected override void OnAppearing()
@@ -51,46 +67,56 @@ public partial class MapPage : ContentPage
         _timer = null;
     }
 
-
     private async Task StartTrackingAsync(CancellationToken ct)
     {
         if (_timer == null) return;
 
-        while (!ct.IsCancellationRequested &&
-               _timer != null &&
-               await _timer.WaitForNextTickAsync(ct))
+        try
         {
-            await _vm.UpdateLocationAsync();
-            var location = _vm.CurrentLocation;
-            if (location == null) continue;
-
-            var center = new Location(location.Latitude, location.Longitude);
-            Map.MoveToRegion(MapSpan.FromCenterAndRadius(center, Distance.FromMeters(200)));
-
-            if (!_poisDrawn)
+            while (_timer != null &&
+                   await _timer.WaitForNextTickAsync(ct))
             {
-                Map.Pins.Clear();
-                Map.MapElements.Clear();
+                await _vm.UpdateLocationAsync();
+                var location = _vm.CurrentLocation;
+                if (location == null) continue;
 
-                foreach (var poi in _vm.Pois)
+                var center = new Location(location.Latitude, location.Longitude);
+                Map.MoveToRegion(MapSpan.FromCenterAndRadius(center, Distance.FromMeters(200)));
+
+                if (!_poisDrawn)
                 {
-                    var pin = new Pin
-                    {
-                        Label = poi.GetName("en"),
-                        Address = poi.GetDescription("en"),
-                        Location = new Location(poi.Latitude, poi.Longitude)
-                    };
+                    Map.Pins.Clear();
+                    Map.MapElements.Clear();
+                    _pinToPoi.Clear();
 
-                    Map.Pins.Add(pin);
-                    Map.MapElements.Add(new Circle
+                    foreach (var poi in _vm.Pois)
                     {
-                        Center = pin.Location,
-                        Radius = Distance.FromMeters(poi.Radius)
-                    });
+                        var pin = new Pin
+                        {
+                            Label = poi.GetName("en"),
+                            Address = poi.GetDescription("en"),
+                            Location = new Location(poi.Latitude, poi.Longitude)
+                        };
+
+                        pin.MarkerClicked += OnPinMarkerClicked;
+
+                        Map.Pins.Add(pin);
+                        _pinToPoi[pin] = poi;
+
+                        Map.MapElements.Add(new Circle
+                        {
+                            Center = pin.Location,
+                            Radius = Distance.FromMeters(poi.Radius)
+                        });
+                    }
+
+                    _poisDrawn = true;
                 }
-
-                _poisDrawn = true;
             }
+        }
+        catch (OperationCanceledException)
+        {
+            // bình thường khi rời page
         }
     }
 }
