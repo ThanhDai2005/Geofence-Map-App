@@ -1,56 +1,54 @@
-<ContentPage
+﻿<ContentPage
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     xmlns:maps="clr-namespace:Microsoft.Maui.Controls.Maps;assembly=Microsoft.Maui.Controls.Maps"
     x:Class="MauiApp1.Views.MapPage">
 
     <Grid>
+        <!-- MAP -->
         <maps:Map
-            x:Name="Map"
-            IsShowingUser="True"
-            MapType="Street" />
+        x:Name="Map"
+        IsShowingUser="True"
+        MapType="Street" />
 
+        <!-- LANGUAGE SWITCH -->
+        <HorizontalStackLayout
+        Padding="10"
+        Spacing="10"
+        BackgroundColor="White"
+        VerticalOptions="Start">
+
+            <Button Text="Tiếng Việt"
+                Clicked="OnVietnameseClicked" />
+            <Button Text="English"
+                Clicked="OnEnglishClicked" />
+        </HorizontalStackLayout>
+
+        <!-- BOTTOM PANEL -->
         <Border IsVisible="{Binding IsPoiPanelVisible}"
-                VerticalOptions="End"
-                Margin="20, 0, 20, 30"
-                Padding="20"
-                BackgroundColor="White"
-                StrokeShape="RoundRectangle 20">
-
-            <Border.Shadow>
-                <Shadow Brush="Black" Opacity="0.3" Offset="0,5" Radius="10" />
-            </Border.Shadow>
+            VerticalOptions="End"
+            Margin="20,0,20,30"
+            Padding="20"
+            BackgroundColor="White"
+            StrokeShape="RoundRectangle 20">
 
             <VerticalStackLayout Spacing="10">
-                <Label Text="{Binding SelectedPoi.Name}" 
-                       FontAttributes="Bold" 
-                       FontSize="20" 
-                       TextColor="Black"/>
+                <Label Text="{Binding SelectedPoi.Name}" FontSize="20" FontAttributes="Bold"/>
 
-                <Label Text="{Binding SelectedPoi.NarrationShort}" 
-                       FontSize="15" 
-                       TextColor="DarkGray"
-                       MaxLines="3"
-                       LineBreakMode="TailTruncation"/>
+                <Label Text="{Binding SelectedPoi.NarrationShort}"
+                   MaxLines="3"
+                   LineBreakMode="TailTruncation"/>
 
-                <Grid ColumnDefinitions="*, *" ColumnSpacing="15" Margin="0, 10, 0, 0">
-                    <Button Grid.Column="0" 
-                            Text="Nghe chi tiết" 
-                            Clicked="OnListenDetailedClicked" 
-                            BackgroundColor="#2196F3" 
-                            TextColor="White" 
-                            CornerRadius="10"
-                            FontAttributes="Bold"/>
+                <Grid ColumnDefinitions="*,*">
+                    <Button Text="Nghe chi tiết"
+                        Clicked="OnListenDetailedClicked"/>
 
-                    <Button Grid.Column="1" 
-                            Text="Đóng" 
-                            Clicked="OnClosePanelClicked" 
-                            BackgroundColor="#EEEEEE" 
-                            TextColor="Black" 
-                            CornerRadius="10"/>
+                    <Button Grid.Column="1"
+                        Text="Đóng"
+                        Clicked="OnClosePanelClicked"/>
                 </Grid>
             </VerticalStackLayout>
         </Border>
     </Grid>
-
+    
 </ContentPage>

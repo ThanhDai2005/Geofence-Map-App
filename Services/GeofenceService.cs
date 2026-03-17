@@ -24,7 +24,7 @@ public class GeofenceService
 
     public async Task CheckLocationAsync(Location location)
     {
-        if (!await _gate.WaitAsync(0)) return; // đang chạy thì bỏ qua tick này
+        if (!await _gate.WaitAsync(0)) return;
         try
         {
             foreach (var poi in _pois.OrderByDescending(p => p.Priority))
@@ -36,7 +36,7 @@ public class GeofenceService
 
                 if (distanceMeters <= poi.Radius)
                 {
-                    if (_alreadyTriggered.Contains(poi.Code)) continue;
+                    if (_alreadyTriggered.Contains(poi.Id)) continue;
 
                     // Use flattened NarrationShort for geofence-triggered audio, fallback to Name
                     var text = !string.IsNullOrWhiteSpace(poi.NarrationShort) ? poi.NarrationShort : poi.Name;
@@ -44,11 +44,11 @@ public class GeofenceService
                     if (!string.IsNullOrWhiteSpace(text))
                         await _audioService.SpeakAsync(text, CurrentLanguage);
 
-                    _alreadyTriggered.Add(poi.Code);
+                    _alreadyTriggered.Add(poi.Id);
                 }
                 else if (distanceMeters > poi.Radius * 1.2)
                 {
-                    _alreadyTriggered.Remove(poi.Code);
+                    _alreadyTriggered.Remove(poi.Id);
                 }
             }
         }

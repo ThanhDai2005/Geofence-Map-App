@@ -148,44 +148,45 @@ public class MapViewModel : INotifyPropertyChanged
 
         return allPoisFromJson
             .Where(p => p.LanguageCode == lang && !string.IsNullOrWhiteSpace(p.Code))
+            .Select(p =>
+            {
+                p.Id = $"{p.Code}_{p.LanguageCode}";
+                return p;
+            })
             .ToList();
     }
 
-    public async Task LoadPoisAsync()
+    public async Task LoadPoisAsync(string? preferredLanguage = null)
     {
         await _db.InitAsync();
 
-        // 1. Lấy ngôn ngữ tự động của máy
-        var deviceLang = CultureInfo.CurrentCulture.TwoLetterISOLanguageName;
-        if (string.IsNullOrWhiteSpace(deviceLang)) deviceLang = "vi";
+        var targetLang = string.IsNullOrWhiteSpace(preferredLanguage)
+            ? CultureInfo.CurrentCulture.TwoLetterISOLanguageName
+            : preferredLanguage.Trim().ToLowerInvariant();
 
-        // 2. Thử đọc JSON theo ngôn ngữ máy
-        var seedPois = await LoadPoisFromJsonAsync(deviceLang);
+        if (string.IsNullOrWhiteSpace(targetLang))
+            targetLang = "vi";
 
-        // 3. FALLBACK: Nếu JSON không có ngôn ngữ này (ví dụ khách xài tiếng Pháp), lùi về tiếng Anh hoặc Việt
+        var seedPois = await LoadPoisFromJsonAsync(targetLang);
+
         if (seedPois.Count == 0)
         {
-            deviceLang = "vi"; // Mặc định lùi về tiếng Việt nếu không tìm thấy
-            seedPois = await LoadPoisFromJsonAsync(deviceLang);
+            targetLang = "vi";
+            seedPois = await LoadPoisFromJsonAsync(targetLang);
         }
 
-        // 4. Chốt ngôn ngữ
-        CurrentLanguage = deviceLang;
+        CurrentLanguage = targetLang;
         _geofenceService.CurrentLanguage = CurrentLanguage;
 
-        // 5. Nạp vào Database
         await _db.UpsertManyAsync(seedPois);
 
-        // 6. Lấy dữ liệu lên giao diện
         var poisFromDb = await _db.GetAllAsync(CurrentLanguage);
 
         MainThread.BeginInvokeOnMainThread(() =>
         {
             Pois.Clear();
             foreach (var poi in poisFromDb)
-            {
                 Pois.Add(poi);
-            }
         });
 
         _geofenceService.UpdatePois(poisFromDb);

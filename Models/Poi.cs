@@ -6,12 +6,11 @@ namespace MauiApp1.Models;
 [Table("pois")]
 public class Poi
 {
-    // Primary key changed from int Id -> string Code
     [PrimaryKey]
-    public string Code { get; set; } = "";
+    public string Id { get; set; } = ""; // Code + Language
 
-    // Language code for this flattened record (e.g. "vi", "en")
-    public string LanguageCode { get; set; } = "vi";
+    public string Code { get; set; } = "";
+    public string LanguageCode { get; set; } = "";
 
     // Flattened text fields
     public string Name { get; set; } = "";

@@ -27,8 +27,8 @@ public class PoiDatabase
         try { await _db.ExecuteAsync("ALTER TABLE pois ADD COLUMN Summary TEXT"); } catch { }
         try { await _db.ExecuteAsync("ALTER TABLE pois ADD COLUMN NarrationShort TEXT"); } catch { }
 
-        // Keep unique index on Code (Code is primary key in model)
-        await _db.ExecuteAsync("CREATE UNIQUE INDEX IF NOT EXISTS IX_pois_Code ON pois(Code)");
+        await _db.ExecuteAsync("CREATE INDEX IF NOT EXISTS IX_pois_Code ON pois(Code)");
+        await _db.ExecuteAsync("CREATE INDEX IF NOT EXISTS IX_pois_LanguageCode ON pois(LanguageCode)");
 
         _inited = true;
     }
@@ -39,9 +39,9 @@ public class PoiDatabase
               .OrderByDescending(p => p.Priority)
               .ToListAsync();
 
-    public Task<Poi?> GetByCodeAsync(string code)
+    public Task<Poi?> GetByIdAsync(string id)
         => _db.Table<Poi>()
-              .Where(p => p.Code == code)
+              .Where(p => p.Id == id)
               .FirstOrDefaultAsync();
 
     public Task<int> InsertAsync(Poi poi)
@@ -55,7 +55,7 @@ public class PoiDatabase
 
     public async Task UpsertAsync(Poi poi)
     {
-        var existing = await GetByCodeAsync(poi.Code);
+        var existing = await GetByIdAsync(poi.Id);
 
         if (existing == null)
         {
@@ -63,7 +63,6 @@ public class PoiDatabase
             return;
         }
 
-        // Update existing record (Code is primary key in model)
         await _db.UpdateAsync(poi);
     }
 
