@@ -26,10 +26,12 @@ public class AudioService
                 ?? locales.FirstOrDefault(l =>
                     l.Language.StartsWith(languageCode, StringComparison.OrdinalIgnoreCase));
 
-            var options = new SpeechOptions()
+            var options = new SpeechOptions();
+
+            if (selectedLocale != null)
             {
-                Locale = selectedLocale
-            };
+                options.Locale = selectedLocale;
+            }
 
             await TextToSpeech.Default.SpeakAsync(text, options, _cts.Token);
         }

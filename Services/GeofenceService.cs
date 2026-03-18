@@ -37,7 +37,7 @@ public class GeofenceService
                         p.Latitude, p.Longitude)
                 })
                 // chỉ lấy những POI trong vùng
-                .Where(x => x.Distance <= x.Poi.Radius)
+                .Where(x => x.Distance <= x.Poi.Radius * 2)
                 // ưu tiên cao trước
                 .OrderByDescending(x => x.Poi.Priority)
                 // nếu cùng priority thì lấy gần nhất

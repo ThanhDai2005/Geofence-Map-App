@@ -3,117 +3,76 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     xmlns:maps="clr-namespace:Microsoft.Maui.Controls.Maps;assembly=Microsoft.Maui.Controls.Maps"
     x:Class="MauiApp1.Views.MapPage"
-    BackgroundColor="#F5F5F5">
+    BackgroundColor="{StaticResource SurfaceBackground}">
 
     <Grid>
+        <maps:Map x:Name="Map"
+                  IsShowingUser="True"
+                  MapType="Street" />
 
-        <!-- MAP -->
-        <maps:Map
-            x:Name="Map"
-            IsShowingUser="True"
-            MapType="Street" />
+        <!-- Top floating bar -->
+        <Border Margin="16,48,16,0"
+                Padding="12"
+                BackgroundColor="#FDFBF9EE"
+                Stroke="{StaticResource BorderLight}"
+                StrokeShape="RoundRectangle 24"
+                VerticalOptions="Start">
 
-        <!-- TOP BAR -->
-        <Border
-            Margin="16,50,16,0"
-            Padding="10"
-            BackgroundColor="#FFFFFFEE"
-            StrokeShape="RoundRectangle 20"
-            VerticalOptions="Start">
+            <Grid ColumnDefinitions="Auto,*,Auto,Auto" ColumnSpacing="10">
+                <Border BackgroundColor="#F8E9E0" StrokeThickness="0" Padding="10" StrokeShape="RoundRectangle 16">
+                    <Label Text="🧭" FontSize="18" />
+                </Border>
 
-            <HorizontalStackLayout Spacing="10">
-
-                <Button Text="VIETNAM"
-                        WidthRequest="50"
-                        HeightRequest="40"
-                        CornerRadius="12"
-                        BackgroundColor="#EEEEEE"
-                        Clicked="OnVietnameseClicked"/>
-
-                <Button Text="ENGLISH"
-                        WidthRequest="50"
-                        HeightRequest="40"
-                        CornerRadius="12"
-                        BackgroundColor="#EEEEEE"
-                        Clicked="OnEnglishClicked"/>
-
-                <Label Text="Audio Guide"
-                       VerticalOptions="Center"
-                       FontAttributes="Bold"
-                       FontSize="16"
-                       TextColor="#333"/>
-            </HorizontalStackLayout>
-        </Border>
-
-        <!-- BOTTOM PANEL -->
-        <Border
-    x:Name="BottomPanel"
-    IsVisible="{Binding IsPoiPanelVisible}"
-    VerticalOptions="End"
-    Margin="16,0,16,20"
-    Padding="0"
-    BackgroundColor="White"
-    StrokeShape="RoundRectangle 25">
-
-            <Border.Shadow>
-                <Shadow Brush="Black"
-                Opacity="0.2"
-                Offset="0,4"
-                Radius="12"/>
-            </Border.Shadow>
-
-            <Grid RowDefinitions="Auto,Auto,Auto">
-
-                <!-- HANDLE -->
-                <BoxView HeightRequest="4"
-                 WidthRequest="40"
-                 CornerRadius="2"
-                 BackgroundColor="#CCCCCC"
-                 HorizontalOptions="Center"
-                 Margin="0,10"/>
-
-                <!-- CONTENT -->
-                <VerticalStackLayout
-            Grid.Row="1"
-            Padding="20"
-            Spacing="10">
-
-                    <Label Text="{Binding SelectedPoi.Name}"
-                   FontSize="20"
-                   FontAttributes="Bold"
-                   TextColor="#111"/>
-
-                    <Label Text="{Binding SelectedPoi.NarrationShort}"
-                   FontSize="14"
-                   TextColor="#666"
-                   MaxLines="3"
-                   LineBreakMode="TailTruncation"/>
+                <VerticalStackLayout Grid.Column="1" Spacing="2">
+                    <Label Text="Bản đồ Việt Nam" FontSize="16" FontAttributes="Bold" TextColor="{StaticResource BrandPrimaryDark}" />
+                    <Label Text="Khám phá bằng vị trí và âm thanh" FontSize="12" TextColor="{StaticResource TextSecondary}" />
                 </VerticalStackLayout>
 
-                <!-- ACTIONS -->
-                <Grid Grid.Row="2"
-              Padding="15"
-              ColumnDefinitions="*,*"
-              ColumnSpacing="10">
+                <Button Grid.Column="2" Text="VN" Clicked="OnVietnameseClicked"
+                        WidthRequest="46" HeightRequest="40" CornerRadius="14"
+                        BackgroundColor="#F4ECE7" TextColor="{StaticResource BrandPrimaryDark}" />
 
-                    <Button Text="▶ Nghe chi tiết"
-                    BackgroundColor="#007AFF"
-                    TextColor="White"
-                    CornerRadius="15"
-                    HeightRequest="45"
-                    Clicked="OnListenDetailedClicked"/>
-
-                    <Button Grid.Column="1"
-                    Text="✕ Đóng"
-                    BackgroundColor="#EEEEEE"
-                    TextColor="#333"
-                    CornerRadius="15"
-                    HeightRequest="45"
-                    Clicked="OnClosePanelClicked"/>
-                </Grid>
-
+                <Button Grid.Column="3" Text="EN" Clicked="OnEnglishClicked"
+                        WidthRequest="46" HeightRequest="40" CornerRadius="14"
+                        BackgroundColor="#F4ECE7" TextColor="{StaticResource BrandPrimaryDark}" />
             </Grid>
         </Border>
 
+        <!-- Bottom POI panel -->
+        <Border x:Name="BottomPanel"
+                VerticalOptions="End"
+                Margin="16,0,16,20"
+                BackgroundColor="White"
+                Stroke="{StaticResource BorderLight}"
+                StrokeShape="RoundRectangle 28">
+
+            <Border.Shadow>
+                <Shadow Brush="{StaticResource ShadowColor}" Opacity="0.18" Offset="0,8" Radius="18" />
+            </Border.Shadow>
+
+            <Grid RowDefinitions="Auto,Auto,Auto">
+                <BoxView HeightRequest="4"
+                         WidthRequest="42"
+                         HorizontalOptions="Center"
+                         Margin="0,10"
+                         BackgroundColor="#D8C8C0"
+                         CornerRadius="2" />
+
+                <VerticalStackLayout Grid.Row="1" Padding="20,8,20,6" Spacing="8">
+                    <Label Text="{Binding SelectedPoi.Name}" FontSize="22" FontAttributes="Bold" TextColor="{StaticResource TextPrimary}" />
+                    <Label Text="{Binding SelectedPoi.NarrationShort}" FontSize="14" TextColor="{StaticResource TextSecondary}" MaxLines="3" LineBreakMode="TailTruncation" />
+                </VerticalStackLayout>
+
+                <Grid Grid.Row="2" Padding="16" ColumnDefinitions="*,*" ColumnSpacing="10">
+                    <Button Text="▶ Nghe chi tiết"
+                            Style="{StaticResource PrimaryButton}"
+                            Clicked="OnListenDetailedClicked" />
+                    <Button Grid.Column="1"
+                            Text="Đóng"
+                            Style="{StaticResource SecondaryButton}"
+                            Clicked="OnClosePanelClicked" />
+                </Grid>
+            </Grid>
+        </Border>
     </Grid>
 </ContentPage>

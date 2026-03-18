@@ -1,11 +1,30 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
 <Shell
+    x:Class="MauiApp1.AppShell"
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     xmlns:views="clr-namespace:MauiApp1.Views"
-    x:Class="MauiApp1.AppShell">
+    Shell.BackgroundColor="{StaticResource SurfaceDark}"
+    Shell.ForegroundColor="White"
+    Shell.TitleColor="White"
+    Shell.UnselectedColor="#B7C2CF"
+    Shell.TabBarBackgroundColor="{StaticResource SurfaceDark}"
+    Shell.TabBarForegroundColor="White"
+    Shell.TabBarUnselectedColor="#AEB9C8"
+    Shell.NavBarHasShadow="False">
 
-    <ShellContent
-        Title="Map"
-        ContentTemplate="{DataTemplate views:MapPage}" />
+    <TabBar>
+        <ShellContent Title="Khám phá"
+                      Icon="compass.png"
+                      ContentTemplate="{DataTemplate views:ExplorePage}" />
 
+        <ShellContent Title="Bản đồ"
+                      Route="map"
+                      Icon="map.png"
+                      ContentTemplate="{DataTemplate views:MapPage}" />
+
+        <ShellContent Title="Giới thiệu"
+                      Icon="book.png"
+                      ContentTemplate="{DataTemplate views:AboutPage}" />
+    </TabBar>
 </Shell>

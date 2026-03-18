@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="MauiApp1.Views.AboutPage"
+             Title="Giới thiệu">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="20,20,20,120" Spacing="20">
+
+            <Border Style="{StaticResource CardBorder}" Padding="0">
+                <Grid RowDefinitions="220,Auto">
+                    <Grid>
+                        <Image Source="logotravelvn.png" Aspect="AspectFit" Margin="20" />
+                    </Grid>
+
+                    <VerticalStackLayout Grid.Row="1" Padding="20" Spacing="10">
+                        <Label Text="VN GO Travel" Style="{StaticResource PageTitleLabel}" />
+                        <Label Text="Ứng dụng du lịch giúp người dùng khám phá vẻ đẹp Việt Nam qua bản đồ, hình ảnh, GPS và thuyết minh đa ngôn ngữ." Style="{StaticResource BodyText}" />
+                    </VerticalStackLayout>
+                </Grid>
+            </Border>
+
+            <Label Text="Việt Nam trong từng hành trình" Style="{StaticResource SectionTitle}" />
+
+            <Border Style="{StaticResource CardBorder}">
+                <VerticalStackLayout Spacing="14">
+                    <Label Text="Việt Nam là đất nước của núi non hùng vĩ, những kỳ quan thiên nhiên nổi tiếng, các phố cổ đậm chiều sâu văn hóa và những vùng đất mang bản sắc riêng ở từng miền. VN GO Travel được xây dựng để giới thiệu vẻ đẹp đó bằng một trải nghiệm trực quan, hiện đại và truyền cảm hứng hơn." 
+                           FontSize="16"
+                           TextColor="{StaticResource TextPrimary}" />
+
+                    <Button Text="🎧 Nghe giới thiệu Việt Nam"
+                            Style="{StaticResource PrimaryButton}" />
+                </VerticalStackLayout>
+            </Border>
+
+            <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
+                <Border Style="{StaticResource CardBorder}">
+                    <VerticalStackLayout Spacing="8">
+                        <Label Text="🏞 Thiên nhiên" FontSize="17" FontAttributes="Bold" TextColor="{StaticResource NatureEmerald}" />
+                        <Label Text="Khám phá kỳ quan, núi non, sông hồ, bãi biển và những vùng đất đẹp bậc nhất Việt Nam." Style="{StaticResource BodyText}" />
+                    </VerticalStackLayout>
+                </Border>
+
+                <Border Style="{StaticResource CardBorder}">
+                    <VerticalStackLayout Spacing="8">
+                        <Label Text="🗺 Thông minh" FontSize="17" FontAttributes="Bold" TextColor="{StaticResource NatureBlue}" />
+                        <Label Text="Theo dõi vị trí, hiển thị POI, hỗ trợ song ngữ và phát thuyết minh theo hành trình thực tế." Style="{StaticResource BodyText}" />
+                    </VerticalStackLayout>
+                </Border>
+            </Grid>
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

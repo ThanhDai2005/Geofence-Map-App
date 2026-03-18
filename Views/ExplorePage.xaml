@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="MauiApp1.Views.ExplorePage"
+             Title="Khám phá">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="20,16,20,120" Spacing="22">
+
+            <!-- HERO -->
+            <Border Style="{StaticResource CardBorder}" Padding="0">
+                <Grid RowDefinitions="300,Auto" RowSpacing="0">
+
+                    <Grid>
+                        <CarouselView HeightRequest="300" IndicatorView="HeroIndicator">
+                            <CarouselView.ItemsSource>
+                                <x:Array Type="x:String"> 
+                                    <x:String>cauvangdanang.jpg</x:String>
+                                    <x:String>caobang.jpg</x:String>
+                                    <x:String>chuabaidinh.jpg</x:String>
+                                    <x:String>hoian.jpg</x:String>
+                                </x:Array>
+                            </CarouselView.ItemsSource>
+
+                            <CarouselView.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid>
+                                        <Image Source="{Binding .}" Aspect="AspectFill" />
+                                        <Grid BackgroundColor="#55000000" />
+                                    </Grid>
+                                </DataTemplate>
+                            </CarouselView.ItemTemplate>
+                        </CarouselView>
+
+                        <VerticalStackLayout Padding="22" VerticalOptions="End" Spacing="8">
+                            <Label Text="VN GO Travel"
+                                   Style="{StaticResource HeroTitleLabel}" />
+                            <Label Text="Khám phá vẻ đẹp Việt Nam"
+                                   FontSize="20"
+                                   FontAttributes="Bold"
+                                   TextColor="#FFF3EA" />
+                            <Label Text="Từ núi non hùng vĩ, vịnh biển kỳ quan, phố cổ lung linh cho đến dòng sông và thác nước ngoạn mục — mọi hành trình đều bắt đầu từ đây."
+                                   FontSize="14"
+                                   TextColor="White" />
+                        </VerticalStackLayout>
+                    </Grid>
+
+                    <VerticalStackLayout Grid.Row="1" Padding="18" Spacing="10">
+                        <IndicatorView x:Name="HeroIndicator"
+                                       HorizontalOptions="Center"
+                                       IndicatorColor="#D7C6BC"
+                                       SelectedIndicatorColor="{StaticResource BrandAccent}" />
+
+                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                            <VerticalStackLayout Spacing="6">
+                                <Label Text="Bắt đầu chuyến đi của bạn"
+                                       Style="{StaticResource SectionTitle}" />
+                                <Label Text="Tìm điểm đến nổi bật, nghe thuyết minh tự động và xem bản đồ thông minh theo vị trí hiện tại."
+                                       Style="{StaticResource BodyText}" />
+                            </VerticalStackLayout>
+
+                            <Button Grid.Column="1"
+                                    Text="Mở bản đồ"
+                                    Style="{StaticResource PrimaryButton}"
+                                    WidthRequest="128" 
+                                    Clicked="OnOpenMapClicked" />
+                        </Grid>
+                    </VerticalStackLayout>
+                </Grid>
+            </Border>
+
+            <!-- Quick stats -->
+            <Grid ColumnDefinitions="*,*,*" ColumnSpacing="12">
+                <Border Style="{StaticResource CardBorder}">
+                    <VerticalStackLayout Spacing="6">
+                        <Label Text="50+" FontSize="26" FontAttributes="Bold" TextColor="{StaticResource BrandPrimaryDark}" />
+                        <Label Text="Điểm đến" Style="{StaticResource BodyText}" />
+                    </VerticalStackLayout>
+                </Border>
+
+                <Border Style="{StaticResource CardBorder}">
+                    <VerticalStackLayout Spacing="6">
+                        <Label Text="vi / en" FontSize="22" FontAttributes="Bold" TextColor="{StaticResource NatureBlue}" />
+                        <Label Text="Ngôn ngữ" Style="{StaticResource BodyText}" />
+                    </VerticalStackLayout>
+                </Border>
+
+                <Border Style="{StaticResource CardBorder}">
+                    <VerticalStackLayout Spacing="6">
+                        <Label Text="GPS" FontSize="24" FontAttributes="Bold" TextColor="{StaticResource NatureEmerald}" />
+                        <Label Text="Audio guide" Style="{StaticResource BodyText}" />
+                    </VerticalStackLayout>
+                </Border>
+            </Grid>
+
+            <!-- Section -->
+            <Label Text="Điểm đến nổi bật" Style="{StaticResource SectionTitle}" />
+
+            <!-- Destination cards -->
+            <Border Style="{StaticResource CardBorder}">
+                <Grid ColumnDefinitions="110,*" ColumnSpacing="14">
+                    <Image Source="cauvangdanang.jpg" HeightRequest="110" WidthRequest="110" Aspect="AspectFill" />
+                    <VerticalStackLayout Grid.Column="1" Spacing="6">
+                        <Label Text="Bà Nà Hills — Cầu Vàng" FontSize="18" FontAttributes="Bold" TextColor="{StaticResource TextPrimary}" />
+                        <Label Text="Biểu tượng du lịch hiện đại của Đà Nẵng, nổi bật với cây cầu vàng giữa mây núi hùng vĩ." Style="{StaticResource BodyText}" />
+                        <Label Text="Đà Nẵng" FontSize="13" TextColor="{StaticResource BrandPrimaryDark}" />
+                    </VerticalStackLayout>
+                </Grid>
+            </Border>
+
+            <Border Style="{StaticResource CardBorder}">
+                <Grid ColumnDefinitions="110,*" ColumnSpacing="14">
+                    <Image Source="caobang.jpg" HeightRequest="110" WidthRequest="110" Aspect="AspectFill" />
+                    <VerticalStackLayout Grid.Column="1" Spacing="6">
+                        <Label Text="Thác Bản Giốc" FontSize="18" FontAttributes="Bold" TextColor="{StaticResource TextPrimary}" />
+                        <Label Text="Một trong những thác nước đẹp nhất Đông Nam Á với dòng nước xanh ngọc và thiên nhiên kỳ vĩ." Style="{StaticResource BodyText}" />
+                        <Label Text="Cao Bằng" FontSize="13" TextColor="{StaticResource BrandPrimaryDark}" />
+                    </VerticalStackLayout>
+                </Grid>
+            </Border>
+
+            <Border Style="{StaticResource CardBorder}">
+                <Grid ColumnDefinitions="110,*" ColumnSpacing="14">
+                    <Image Source="chuabaidinh.jpg" HeightRequest="110" WidthRequest="110" Aspect="AspectFill" />
+                    <VerticalStackLayout Grid.Column="1" Spacing="6">
+                        <Label Text="Tràng An" FontSize="18" FontAttributes="Bold" TextColor="{StaticResource TextPrimary}" />
+                        <Label Text="Quần thể danh thắng nổi tiếng với non nước, hang động và vẻ đẹp thanh bình rất riêng của Ninh Bình." Style="{StaticResource BodyText}" />
+                        <Label Text="Ninh Bình" FontSize="13" TextColor="{StaticResource BrandPrimaryDark}" />
+                    </VerticalStackLayout>
+                </Grid>
+            </Border>
+
+            <Border Style="{StaticResource CardBorder}">
+                <Grid ColumnDefinitions="110,*" ColumnSpacing="14">
+                    <Image Source="hoian.jpg" HeightRequest="110" WidthRequest="110" Aspect="AspectFill" />
+                    <VerticalStackLayout Grid.Column="1" Spacing="6">
+                        <Label Text="Hội An về đêm" FontSize="18" FontAttributes="Bold" TextColor="{StaticResource TextPrimary}" />
+                        <Label Text="Phố cổ lung linh ánh đèn, sông Hoài yên bình và bầu không khí văn hóa rất đặc trưng của miền Trung." Style="{StaticResource BodyText}" />
+                        <Label Text="Quảng Nam" FontSize="13" TextColor="{StaticResource BrandPrimaryDark}" />
+                    </VerticalStackLayout>
+                </Grid>
+            </Border>
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

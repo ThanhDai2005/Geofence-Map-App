@@ -45,6 +45,8 @@ public partial class MapPage : ContentPage
 
             _vm.SelectedPoi = poi;
 
+            BottomPanel.IsVisible = true; // ✅ bật trước
+
             await BottomPanel.TranslateToAsync(0, 0, 250, Easing.CubicOut);
             await BottomPanel.FadeToAsync(1, 200);
 
@@ -69,6 +71,7 @@ public partial class MapPage : ContentPage
         await BottomPanel.TranslateToAsync(0, 300, 200, Easing.CubicIn);
         await BottomPanel.FadeToAsync(0, 150);
 
+        BottomPanel.IsVisible = false; // ✅ tắt sau animation
         _vm.SelectedPoi = null;
     }
     // ------------------------------------
@@ -137,6 +140,10 @@ public partial class MapPage : ContentPage
         _userPin = null;
 
         await _vm.LoadPoisAsync(_vm.CurrentLanguage);
+
+        // delay nhẹ để UI update xong
+        await Task.Delay(50);
+
         DrawPois();
     }
 

@@ -5,10 +5,10 @@ namespace MauiApp1
 {
     public partial class App : Application
     {
-        public App(MapPage mapPage)
+        public App()
         {
             InitializeComponent();
-            MainPage = mapPage;
+            MainPage = new AppShell();
         }
     }
 

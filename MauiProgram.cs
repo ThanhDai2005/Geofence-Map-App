@@ -1,4 +1,5 @@
 ﻿using MauiApp1.Services;
+using MauiApp1.Views;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Maui.Controls.Hosting;
@@ -31,7 +32,9 @@ namespace MauiApp1
             builder.Services.AddSingleton<Services.AudioService>();
             builder.Services.AddSingleton<Services.GeofenceService>();
             builder.Services.AddSingleton<ViewModels.MapViewModel>();
-            builder.Services.AddTransient<Views.MapPage>();
+            builder.Services.AddTransient<ExplorePage>();
+            builder.Services.AddTransient<AboutPage>();
+            builder.Services.AddTransient<MapPage>();
 
             var app = builder.Build();
 
