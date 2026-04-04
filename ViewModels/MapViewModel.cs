@@ -32,12 +32,64 @@ public class MapViewModel : INotifyPropertyChanged
                 OnPropertyChanged();
                 OnPropertyChanged(nameof(IsVietnamese));
                 OnPropertyChanged(nameof(IsEnglish));
+                OnPropertyChanged(nameof(MapTitle));
+                OnPropertyChanged(nameof(MapSubtitle));
+                OnPropertyChanged(nameof(ListenDetailedButtonText));
+                OnPropertyChanged(nameof(StopButtonText));
+                OnPropertyChanged(nameof(UserLocationText));
             }
         }
     }
 
     public bool IsVietnamese => CurrentLanguage == "vi";
     public bool IsEnglish => CurrentLanguage == "en";
+    public bool IsChinese => CurrentLanguage == "zh";
+    public bool IsJapanese => CurrentLanguage == "ja";
+
+    public string MapTitle => CurrentLanguage switch
+    {
+        "vi" => "Bản đồ Việt Nam",
+        "en" => "Map of Vietnam",
+        "zh" => "越南地图",
+        "ja" => "ベトナム地図",
+        _ => "Bản đồ Việt Nam"
+    };
+
+    public string MapSubtitle => CurrentLanguage switch
+    {
+        "vi" => "Khám phá bằng vị trí và âm thanh",
+        "en" => "Explore with your location and audio",
+        "zh" => "通过您的位置与音频探索",
+        "ja" => "位置と音声で探索",
+        _ => "Khám phá bằng vị trí và âm thanh"
+    };
+
+    public string ListenDetailedButtonText => CurrentLanguage switch
+    {
+        "vi" => "🔊 Nghe chi tiết",
+        "en" => "🔊 Listen details",
+        "zh" => "🔊 详细收听",
+        "ja" => "🔊 詳細を聞く",
+        _ => "🔊 Nghe chi tiết"
+    };
+
+    public string StopButtonText => CurrentLanguage switch
+    {
+        "vi" => "⏹ Dừng",
+        "en" => "⏹ Stop",
+        "zh" => "⏹ 停止",
+        "ja" => "⏹ 停止",
+        _ => "⏹ Dừng"
+    };
+
+    public string UserLocationText => CurrentLanguage switch
+    {
+        "vi" => "Bạn đang ở đây",
+        "en" => "You are here",
+        "zh" => "您在这里",
+        "ja" => "ここにいます",
+        _ => "Bạn đang ở đây"
+    };
 
     private Location? _currentLocation;
     public Location? CurrentLocation
@@ -157,7 +209,7 @@ public class MapViewModel : INotifyPropertyChanged
             ? "vi"
             : language.Trim().ToLowerInvariant();
 
-        if (normalized != "vi" && normalized != "en")
+        if (normalized != "vi" && normalized != "en" && normalized != "zh" && normalized != "ja")
             normalized = "vi";
 
         CurrentLanguage = normalized;
@@ -219,6 +271,12 @@ public class MapViewModel : INotifyPropertyChanged
                 p.Summary ??= "";
                 p.NarrationShort ??= "";
                 p.NarrationLong ??= "";
+                // Keep content complete even if JSON left fields empty.
+                // This prevents zh/ja entries with empty NarrationLong from degrading UX/TTS.
+                if (string.IsNullOrWhiteSpace(p.NarrationShort))
+                    p.NarrationShort = !string.IsNullOrWhiteSpace(p.Summary) ? p.Summary : p.Name;
+                if (string.IsNullOrWhiteSpace(p.NarrationLong))
+                    p.NarrationLong = p.NarrationShort;
                 if (p.Radius <= 0) p.Radius = 50;
                 return p;
             })
@@ -244,12 +302,15 @@ public class MapViewModel : INotifyPropertyChanged
         await _db.InitAsync();
         var tInitEnd = sw.ElapsedMilliseconds;
 
-        var targetLang = string.IsNullOrWhiteSpace(preferredLanguage)
-            ? CultureInfo.CurrentCulture.TwoLetterISOLanguageName
+        var uiLang = string.IsNullOrWhiteSpace(preferredLanguage)
+            ? CurrentLanguage
             : preferredLanguage.Trim().ToLowerInvariant();
 
-        if (targetLang != "vi" && targetLang != "en")
-            targetLang = "vi";
+        if (uiLang != "vi" && uiLang != "en" && uiLang != "zh" && uiLang != "ja")
+            uiLang = "vi";
+
+        // POI data might not exist for all UI languages. Keep UI language, but fallback data language.
+        var dataLang = uiLang;
 
         var tLoadSeedStart = sw.ElapsedMilliseconds;
         var allSeedPois = await LoadAllPoisFromJsonAsync();
@@ -260,16 +321,15 @@ public class MapViewModel : INotifyPropertyChanged
         var tUpsertEnd = sw.ElapsedMilliseconds;
 
         var tGetStart = sw.ElapsedMilliseconds;
-        var poisFromDb = await _db.GetAllAsync(targetLang);
+        var poisFromDb = await _db.GetAllAsync(dataLang);
         var tGetEnd = sw.ElapsedMilliseconds;
 
-        if (poisFromDb.Count == 0 && targetLang != "vi")
+        if (poisFromDb.Count == 0 && dataLang != "vi")
         {
-            targetLang = "vi";
-            poisFromDb = await _db.GetAllAsync(targetLang);
+            dataLang = "vi";
+            poisFromDb = await _db.GetAllAsync(dataLang);
         }
 
-        CurrentLanguage = targetLang;
         _geofenceService.CurrentLanguage = CurrentLanguage;
 
         await RefreshPoisCollectionAsync(poisFromDb);

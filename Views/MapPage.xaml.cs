@@ -47,64 +47,45 @@ public partial class MapPage : ContentPage
         var sw = System.Diagnostics.Stopwatch.StartNew();
         Debug.WriteLine($"[MAP-TIME] OnAppearingAsync START");
 
+        // Capture pending focus before potentially redrawing POIs
+        var pendingFocus = _vm.ConsumePendingFocusRequest();
+
         if (!_poisDrawn)
         {
             InitBottomPanel();
 
-            Debug.WriteLine($"[MAP-TIME] Starting LoadPoisAsync (background)");
-            var loadTask = _vm.LoadPoisAsync();
+            Debug.WriteLine("[MAP-TIME] Await LoadPoisAsync before drawing pins");
+            await _vm.LoadPoisAsync();
 
-            // Capture any pending focus and ensure focus happens after load completes
-            var pendingFocus = _vm.ConsumePendingFocusRequest();
-
-            // When load completes, draw POIs on main thread immediately (don't wait for tracking tick)
-            loadTask.ContinueWith(async t =>
+            await MainThread.InvokeOnMainThreadAsync(() =>
             {
-                try
+                if (!_poisDrawn)
                 {
-                    await MainThread.InvokeOnMainThreadAsync(() =>
-                    {
-                        try
-                        {
-                            if (!_poisDrawn)
-                            {
-                                DrawPois();
-                                _poisDrawn = true;
-                                Debug.WriteLine("[MAP-TIME] DrawPois invoked after LoadPoisAsync completion");
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            Debug.WriteLine($"[MAP-ERR] DrawPois after load: {ex}");
-                        }
-                    });
+                    DrawPois();
+                    _poisDrawn = true;
+                    Debug.WriteLine("[MAP-TIME] DrawPois invoked after LoadPoisAsync completion");
+                }
+            });
 
-                    // If there was a pending focus request, perform focus now on main thread
-                    if (!string.IsNullOrWhiteSpace(pendingFocus.code))
-                    {
-                        await MainThread.InvokeOnMainThreadAsync(async () =>
-                        {
-                            try
-                            {
-                                Debug.WriteLine($"[MAP-TIME] Performing pending focus after load code={pendingFocus.code} lang={pendingFocus.lang}");
-                                await FocusOnPoiByCodeAsync(pendingFocus.code, pendingFocus.lang);
-                            }
-                            catch (Exception ex)
-                            {
-                                Debug.WriteLine($"[MAP-ERR] FocusOnPoiByCodeAsync after load: {ex}");
-                            }
-                        });
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Debug.WriteLine($"[MAP-ERR] loadTask continuation: {ex}");
-                }
-            }, TaskScheduler.Default);
+            UpdateLanguageButtons();
+        }
+        else
+        {
             UpdateLanguageButtons();
         }
 
-        // pending focus handled by loadTask continuation above (if any)
+        if (!string.IsNullOrWhiteSpace(pendingFocus.code))
+        {
+            try
+            {
+                Debug.WriteLine($"[MAP-TIME] Performing pending focus after load code={pendingFocus.code} lang={pendingFocus.lang}");
+                await FocusOnPoiByCodeAsync(pendingFocus.code!, pendingFocus.lang);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[MAP-ERR] FocusOnPoiByCodeAsync after load: {ex}");
+            }
+        }
 
         if (!_isTracking)
         {
@@ -125,7 +106,6 @@ public partial class MapPage : ContentPage
         base.OnDisappearing();
 
         _isTracking = false;
-        _poisDrawn = false;
         _lastAutoPoiId = null;
         _isUserSelecting = false;
 
@@ -210,7 +190,7 @@ public partial class MapPage : ContentPage
                                 new Location(nearest.Poi.Latitude, nearest.Poi.Longitude),
                                 Distance.FromMeters(220)));
 
-                        await _vm.PlayPoiAsync(nearest.Poi, _vm.CurrentLanguage);
+                        await _vm.PlayPoiAsync(nearest.Poi, nearest.Poi.LanguageCode);
                     });
                 }
                 else if (nearest == null && _vm.SelectedPoi != null)
@@ -225,19 +205,6 @@ public partial class MapPage : ContentPage
                         await HideBottomPanelAsync();
                         _vm.StopAudio();
                     });
-                }
-
-                if (!_poisDrawn)
-                {
-                    await MainThread.InvokeOnMainThreadAsync(() =>
-                    {
-                        DrawPois();
-
-                        Map.MoveToRegion(
-                            MapSpan.FromCenterAndRadius(center, Distance.FromMeters(500)));
-                    });
-
-                    _poisDrawn = true;
                 }
                 var iterEnd = swLoop.ElapsedMilliseconds;
                 Debug.WriteLine($"[MAP-TIME] Tracking loop iteration elapsed={iterEnd - iterStart} ms");
@@ -258,7 +225,7 @@ public partial class MapPage : ContentPage
         {
             _userPin = new Pin
             {
-                Label = "Bạn đang ở đây",
+                Label = _vm.UserLocationText,
                 Location = location
             };
 
@@ -324,7 +291,7 @@ public partial class MapPage : ContentPage
         _lastAutoPoiId = poi.Id;
 
         await ShowBottomPanelAsync();
-        await _vm.PlayPoiAsync(poi, _vm.CurrentLanguage);
+        await _vm.PlayPoiAsync(poi, poi.LanguageCode);
     }
 
     private async Task FocusOnPoiByCodeAsync(string code, string? lang = null)
@@ -350,6 +317,9 @@ public partial class MapPage : ContentPage
                 MapSpan.FromCenterAndRadius(location, Distance.FromMeters(220)));
 
             await ShowBottomPanelAsync();
+
+            // QR scan should immediately play the POI audio after focusing.
+            await _vm.PlayPoiAsync(poi, poi.LanguageCode);
         });
     }
 
@@ -373,21 +343,12 @@ public partial class MapPage : ContentPage
     private async void OnListenDetailedClicked(object sender, EventArgs e)
     {
         if (_vm.SelectedPoi != null)
-            await _vm.PlayPoiDetailedAsync(_vm.SelectedPoi, _vm.CurrentLanguage);
+            await _vm.PlayPoiDetailedAsync(_vm.SelectedPoi, _vm.SelectedPoi.LanguageCode);
     }
 
     private void OnStopAudioClicked(object sender, EventArgs e)
     {
         _vm.StopAudio();
-    }
-
-    private async void OnOpenDetailClicked(object sender, EventArgs e)
-    {
-        var poi = _vm.SelectedPoi;
-        if (poi == null) return;
-
-        var route = $"/poidetail?code={Uri.EscapeDataString(poi.Code)}&lang={Uri.EscapeDataString(poi.LanguageCode)}";
-        await Shell.Current.GoToAsync(route);
     }
 
     private async void OnVietnameseClicked(object sender, EventArgs e)
@@ -413,23 +374,54 @@ public partial class MapPage : ContentPage
 
         UpdateLanguageButtons();
         DrawPois();
+        _poisDrawn = true;
     }
 
     private void UpdateLanguageButtons()
     {
-        if (_vm.CurrentLanguage == "en")
-        {
-            EnglishButton.BackgroundColor = Color.FromArgb("#D94E2A");
-            EnglishButton.TextColor = Colors.White;
+        // Selected background/text
+        var selectedBg = Color.FromArgb("#D94E2A");
+        var unselectedBg = Color.FromArgb("#F4ECE7");
+        var selectedText = Colors.White;
+        var unselectedText = Color.FromArgb("#6A2C25");
 
-            VietnameseButton.BackgroundColor = Color.FromArgb("#F4ECE7");
-        }
-        else
+        // Reset
+        foreach (var btn in new[] { VietnameseButton, EnglishButton, ChineseButton, JapaneseButton })
         {
-            VietnameseButton.BackgroundColor = Color.FromArgb("#D94E2A");
-            VietnameseButton.TextColor = Colors.White;
-
-            EnglishButton.BackgroundColor = Color.FromArgb("#F4ECE7");
+            btn!.BackgroundColor = unselectedBg;
+            btn.TextColor = unselectedText;
         }
+
+        // Highlight active
+        switch (_vm.CurrentLanguage)
+        {
+            case "en":
+                EnglishButton.BackgroundColor = selectedBg;
+                EnglishButton.TextColor = selectedText;
+                break;
+            case "zh":
+                ChineseButton.BackgroundColor = selectedBg;
+                ChineseButton.TextColor = selectedText;
+                break;
+            case "ja":
+                JapaneseButton.BackgroundColor = selectedBg;
+                JapaneseButton.TextColor = selectedText;
+                break;
+            case "vi":
+            default:
+                VietnameseButton.BackgroundColor = selectedBg;
+                VietnameseButton.TextColor = selectedText;
+                break;
+        }
+    }
+
+    private async void OnChineseClicked(object sender, EventArgs e)
+    {
+        await ReloadLanguageAsync("zh");
+    }
+
+    private async void OnJapaneseClicked(object sender, EventArgs e)
+    {
+        await ReloadLanguageAsync("ja");
     }
 }

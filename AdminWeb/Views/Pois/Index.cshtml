@@ -1,0 +1,82 @@
+@model List<AdminWeb.Models.PoiRecord>
+
+@{
+    ViewData["Title"] = "Quản lý địa điểm du lịch";
+}
+
+<div class="container py-4">
+    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+        <div>
+            <h2 class="mb-1">Quản lý địa điểm du lịch</h2>
+            <div class="text-muted">Danh sách POI theo 4 ngôn ngữ (vi/en/zh/ja). Tìm theo Code hoặc Tên.</div>
+        </div>
+        <div class="d-flex gap-2">
+            <a class="btn btn-primary" asp-controller="Pois" asp-action="Create">+ Thêm POI</a>
+            <a class="btn btn-outline-secondary" href="/pois/export">Xuất pois.json</a>
+        </div>
+    </div>
+
+    <form class="row g-2 mt-3" method="get" action="/pois">
+        <div class="col-12 col-md-5">
+            <input class="form-control" name="q" placeholder="Tìm (Code hoặc Tên)..." value="@(Context.Request.Query["q"])" />
+        </div>
+        <div class="col-6 col-md-3">
+            <input class="form-control" name="code" placeholder="Lọc theo Code" value="@(Context.Request.Query["code"])" />
+        </div>
+        <div class="col-6 col-md-2">
+            <select class="form-select" name="lang">
+                @{
+                    var lang = (string?)Context.Request.Query["lang"];
+                }
+                <option value="" selected="@(string.IsNullOrWhiteSpace(lang))">Tất cả</option>
+                <option value="vi" selected="@(lang == "vi")">vi</option>
+                <option value="en" selected="@(lang == "en")">en</option>
+                <option value="zh" selected="@(lang == "zh")">zh</option>
+                <option value="ja" selected="@(lang == "ja")">ja</option>
+            </select>
+        </div>
+        <div class="col-12 col-md-2 d-grid">
+            <button class="btn btn-dark" type="submit">Lọc</button>
+        </div>
+    </form>
+
+    <div class="table-responsive mt-3">
+        <table class="table table-hover align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th style="width: 140px;">Code</th>
+                    <th style="width: 70px;">Lang</th>
+                    <th>Tên</th>
+                    <th style="width: 140px;" class="text-end">QR</th>
+                    <th style="width: 180px;" class="text-end">Hành động</th>
+                </tr>
+            </thead>
+            <tbody>
+            @foreach (var item in Model)
+            {
+                <tr>
+                    <td><span class="badge text-bg-secondary">@item.Code</span></td>
+                    <td><span class="badge text-bg-light border">@item.LanguageCode</span></td>
+                    <td>
+                        <div class="fw-semibold">@item.Name</div>
+                        <div class="text-muted small text-truncate" style="max-width: 680px;">@item.Summary</div>
+                    </td>
+                    <td class="text-end">
+                        <a class="btn btn-sm btn-outline-secondary" href="/qr/@item.Code" target="_blank">QR PNG</a>
+                    </td>
+                    <td class="text-end">
+                        <a class="btn btn-sm btn-outline-primary" href="/pois/edit?code=@item.Code&amp;lang=@item.LanguageCode">Sửa</a>
+                        <form method="post" action="/pois/delete" class="d-inline">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="code" value="@item.Code" />
+                            <input type="hidden" name="lang" value="@item.LanguageCode" />
+                            <button class="btn btn-sm btn-outline-danger" type="submit" onclick="return confirm('Xóa POI này?')">Xóa</button>
+                        </form>
+                    </td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+</div>
+

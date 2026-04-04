@@ -1,21 +1,16 @@
 ﻿using MauiApp1.Models;
-using Microsoft.Maui.Devices.Sensors;
 
 namespace MauiApp1.Services;
 
 public class GeofenceService
 {
-    private readonly AudioService _audioService;
     private List<Poi> _pois = new();
     private readonly SemaphoreSlim _gate = new(1, 1);
     private string? _currentActivePoiId;
 
     public string CurrentLanguage { get; set; } = "vi";
 
-    public GeofenceService(AudioService audioService)
-    {
-        _audioService = audioService;
-    }
+    public GeofenceService() { }
 
     public void UpdatePois(IEnumerable<Poi> pois)
     {
@@ -49,12 +44,6 @@ public class GeofenceService
                 if (_currentActivePoiId != poi.Id)
                 {
                     _currentActivePoiId = poi.Id;
-
-                    var text = !string.IsNullOrWhiteSpace(poi.NarrationShort)
-                        ? poi.NarrationShort
-                        : poi.Name;
-
-                    await _audioService.SpeakAsync(text, CurrentLanguage);
                 }
             }
             else

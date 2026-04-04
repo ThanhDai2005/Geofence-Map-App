@@ -114,7 +114,10 @@ public class QrScannerViewModel : INotifyPropertyChanged
 
             Debug.WriteLine($"[QR-NAV] POI resolved id={poi.Id} name={poi.Name}");
 
-            var route = $"/poidetail?code={Uri.EscapeDataString(code)}&lang={Uri.EscapeDataString(poi.LanguageCode)}";
+            // After scanning: focus directly on the map and auto-play the POI audio.
+            _mapVm.RequestFocusOnPoiCode(code, poi.LanguageCode);
+
+            var route = $"//map";
             Debug.WriteLine($"[QR-NAV] GoToAsync BEFORE route={route} source={source} main={MainThread.IsMainThread}");
 
             await MainThread.InvokeOnMainThreadAsync(async () =>
