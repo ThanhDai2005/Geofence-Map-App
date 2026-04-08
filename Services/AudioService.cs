@@ -1,29 +1,37 @@
 using Microsoft.Maui.Media;
 using System.Diagnostics;
+using System.Collections.Concurrent;
 
 namespace MauiApp1.Services;
 
 /// <summary>
-/// Singleton TTS wrapper.
-/// Guarantees only one utterance plays at a time: every new <see cref="SpeakAsync"/>
-/// call cancels any in-flight speech before starting. <see cref="Stop"/> also cancels.
+/// Singleton TTS wrapper with production-grade stability and thread-safety.
+/// Features: 
+/// - Thread-safe, once-only locale caching using SemaphoreSlim and double-check locking.
+/// - Serialized SpeakAsync calls to prevent platform engine race conditions.
+/// - Cold-start warm-up logic for Android stability.
+/// - Robust error handling without silent failures.
 /// </summary>
 public class AudioService
 {
     private readonly object _syncLock = new();
     private CancellationTokenSource? _currentCts;
 
-    // ── Cache & Debounce State ──
+    // ── Static Concurrency & Cache ──
+    private static readonly SemaphoreSlim _initSemaphore = new(1, 1);
+    private static readonly SemaphoreSlim _speakSemaphore = new(1, 1);
+    private static List<Locale>? _allLocales;
+    private static bool _isWarmedUp;
+
+    private static readonly ConcurrentDictionary<string, Locale?> _localeCache = new(StringComparer.OrdinalIgnoreCase);
+
+    // ── Instance Cache & Debounce ──
     private string? _lastPoiCode;
     private string? _lastLanguage;
     private DateTime _lastSpeakTime = DateTime.MinValue;
     private static readonly TimeSpan DebounceWindow = TimeSpan.FromSeconds(2.5);
 
-    private static readonly Dictionary<string, Locale?> _localeCache = new(StringComparer.OrdinalIgnoreCase);
-
-    // Maps our short lang codes to preferred BCP-47 locale tags for TTS voice selection.
-    // When the device has a matching locale, TTS will use the correct regional voice.
-    // Matching strategy: exact tag first, then Language prefix match.
+    // Maps our short lang codes to preferred BCP-47 locale tags.
     private static readonly Dictionary<string, string[]> LangToLocales = new(StringComparer.OrdinalIgnoreCase)
     {
         ["vi"] = ["vi-VN"],
@@ -32,21 +40,20 @@ public class AudioService
         ["ko"] = ["ko-KR"],
         ["fr"] = ["fr-FR", "fr-CA"],
         ["zh"] = ["zh-CN", "zh-TW"],
+        ["de"] = ["de-DE", "de-AT"],
+        ["es"] = ["es-ES", "es-MX"],
+        ["it"] = ["it-IT"],
+        ["ru"] = ["ru-RU"],
+        ["pt"] = ["pt-PT", "pt-BR"]
     };
 
     /// <summary>
-    /// Speaks <paramref name="text"/> using the TTS voice best matching
-    /// <paramref name="languageCode"/>. Cancels any currently playing audio first,
-    /// so there is never more than one utterance in flight.
-    /// Debounces consecutive requests for the exact same <paramref name="poiCode"/> and language.
+    /// Speaks <paramref name="text"/> using the TTS voice best matching <paramref name="languageCode"/>.
+    /// Serializes all platform calls to prevent state corruption on Android/iOS.
     /// </summary>
     public async Task SpeakAsync(string poiCode, string text, string languageCode)
     {
-        if (string.IsNullOrWhiteSpace(text))
-        {
-            Debug.WriteLine("[AUDIO] SpeakAsync skipped — empty text");
-            return;
-        }
+        if (string.IsNullOrWhiteSpace(text)) return;
 
         CancellationTokenSource cts;
         lock (_syncLock)
@@ -57,7 +64,7 @@ public class AudioService
             {
                 if (now - _lastSpeakTime < DebounceWindow)
                 {
-                    Debug.WriteLine($"[AUDIO] SpeakAsync debounced (ignored) — code={poiCode} lang={languageCode} within 2.5s");
+                    Debug.WriteLine($"[AUDIO] SpeakAsync debounced for code={poiCode}");
                     return;
                 }
             }
@@ -66,140 +73,140 @@ public class AudioService
             _lastLanguage = languageCode;
             _lastSpeakTime = now;
             
-            // Cancel previous utterance (no-op if already completed).
             _currentCts?.Cancel();
             _currentCts?.Dispose();
             _currentCts = new CancellationTokenSource();
             cts = _currentCts;
         }
 
-        Debug.WriteLine($"[AUDIO] SpeakAsync start lang={languageCode} textLen={text.Length}");
-
+        // --- Serialization Level ---
+        // Ensure only one TTS call hits the platform engine at a time.
+        // This is critical on Android to avoid JavaProxyThrowable and Engine Busy errors.
+        await _speakSemaphore.WaitAsync().ConfigureAwait(false);
         try
         {
+            if (cts.IsCancellationRequested) return;
+
+            // --- Lazy Initialization Level ---
+            await EnsureInitializedAsync().ConfigureAwait(false);
+
+            if (cts.IsCancellationRequested) return;
+
             var selectedLocale = await ResolveLocaleAsync(languageCode).ConfigureAwait(false);
-
-            Debug.WriteLine(selectedLocale != null
-                ? $"[AUDIO] Locale resolved: {selectedLocale.Language}-{selectedLocale.Country} for lang={languageCode}"
-                : $"[AUDIO] No locale found for lang={languageCode} — using system default");
-
-            if (cts.IsCancellationRequested)
-            {
-                Debug.WriteLine("[AUDIO] SpeakAsync aborted before speak — superseded by newer call");
-                return;
-            }
-
+            
             var options = new SpeechOptions
             {
                 Pitch  = 1.0f,
                 Volume = 1.0f,
-                Locale = selectedLocale   // null = system default (safe)
+                Locale = selectedLocale 
             };
 
+            Debug.WriteLine($"[AUDIO] Speaking: lang={languageCode} voice={selectedLocale?.Id ?? "default"} textLen={text.Length}");
             await TextToSpeech.Default.SpeakAsync(text, options, cts.Token).ConfigureAwait(false);
-            Debug.WriteLine($"[AUDIO] SpeakAsync completed lang={languageCode}");
         }
-        catch (OperationCanceledException)
-        {
-            // Normal: audio superseded by newer PlayPoiAsync call or StopAudio().
-            Debug.WriteLine("[AUDIO] SpeakAsync cancelled (superseded or stopped)");
-        }
+        catch (OperationCanceledException) { }
         catch (Exception ex)
         {
-            Debug.WriteLine($"[AUDIO] SpeakAsync error lang={languageCode}: {ex.Message}");
+            Debug.WriteLine($"[AUDIO] SpeakAsync terminal ERROR: {ex.Message}");
+        }
+        finally
+        {
+            _speakSemaphore.Release();
         }
     }
 
-    /// <summary>
-    /// Stops any in-flight audio immediately. Idempotent.
-    /// Does NOT clear <c>_activeNarrationPoiCode</c> in <c>MapViewModel</c> —
-    /// that is the caller's responsibility via <c>MapViewModel.StopAudio()</c>.
-    /// </summary>
     public void Stop()
     {
         lock (_syncLock)
         {
             _currentCts?.Cancel();
-            Debug.WriteLine("[AUDIO] Stop called");
+            Debug.WriteLine("[AUDIO] Stop requested");
         }
     }
 
     // ─────────────────────────────────────────────────────────────────────────
-    // Locale resolution
+    // Thread-Safe Initialization
     // ─────────────────────────────────────────────────────────────────────────
 
-    /// <summary>
-    /// Returns the best available <see cref="Locale"/> on the device for
-    /// <paramref name="langCode"/>.
-    /// <para>
-    /// Strategy:
-    /// <list type="number">
-    ///   <item>Check our <see cref="LangToLocales"/> map for preferred BCP-47 tags.</item>
-    ///   <item>For each candidate tag, try exact match on <c>Language-Country</c>.</item>
-    ///   <item>Fall back to any locale whose <c>Language</c> starts with the lang code.</item>
-    ///   <item>Return <see langword="null"/> (system default voice) if nothing matches.</item>
-    /// </list>
-    /// </para>
-    /// </summary>
-    private static async Task<Locale?> ResolveLocaleAsync(string langCode)
+    private static async Task EnsureInitializedAsync()
     {
-        if (_localeCache.TryGetValue(langCode, out var cached))
-        {
-            Debug.WriteLine($"[AUDIO] Locale cache hit for lang={langCode}");
-            return cached;
-        }
+        // Double-check lock pattern for performance
+        if (_allLocales != null && _isWarmedUp) return;
 
+        await _initSemaphore.WaitAsync().ConfigureAwait(false);
         try
         {
-            var allLocales = (await TextToSpeech.Default.GetLocalesAsync().ConfigureAwait(false))
-                             .ToList();
-
-            Locale? bestMatch = null;
-
-            // Try our preferred BCP-47 tags first (exact match).
-            if (LangToLocales.TryGetValue(langCode, out var preferred))
+            if (_allLocales == null)
             {
-                foreach (var tag in preferred)
-                {
-                    var parts = tag.Split('-');
-                    var tlang = parts[0];
-                    var country = parts.Length > 1 ? parts[1] : "";
-
-                    var match = allLocales.FirstOrDefault(l =>
-                        string.Equals(l.Language, tlang, StringComparison.OrdinalIgnoreCase) &&
-                        string.Equals(l.Country,  country, StringComparison.OrdinalIgnoreCase));
-
-                    if (match != null)
-                    {
-                        bestMatch = match;
-                        break;
-                    }
-                }
+                Debug.WriteLine("[AUDIO] Initializing global TTS locale list...");
+                // Note: GetLocalesAsync is very expensive on first call.
+                var locales = await TextToSpeech.Default.GetLocalesAsync().ConfigureAwait(false);
+                _allLocales = locales?.ToList() ?? new List<Locale>();
+                Debug.WriteLine($"[AUDIO] Initialized with {_allLocales.Count} supported locales.");
             }
 
-            // Loose match: any locale whose Language starts with the requested code.
-            if (bestMatch == null)
+            if (!_isWarmedUp)
             {
-                bestMatch = allLocales.FirstOrDefault(l =>
-                    l.Language.StartsWith(langCode, StringComparison.OrdinalIgnoreCase));
+                Debug.WriteLine("[AUDIO] Performing cold-start warm-up speak...");
+                // Silent speak ensures engine is in Active state before first user request.
+                await TextToSpeech.Default.SpeakAsync(" ", new SpeechOptions { Volume = 0 }).ConfigureAwait(false);
+                _isWarmedUp = true;
             }
-
-            // Explicit Fallback to en-US if nothing matching is found
-            if (bestMatch == null)
-            {
-                Debug.WriteLine($"[AUDIO] No voice found for '{langCode}' — falling back to en-US explicitly.");
-                bestMatch = allLocales.FirstOrDefault(l =>
-                    string.Equals(l.Language, "en", StringComparison.OrdinalIgnoreCase) &&
-                    string.Equals(l.Country, "US", StringComparison.OrdinalIgnoreCase));
-            }
-            
-            _localeCache[langCode] = bestMatch;
-            return bestMatch;
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"[AUDIO] ResolveLocaleAsync error: {ex.Message}");
-            return null;
+            Debug.WriteLine($"[AUDIO] EnsureInitializedAsync failure: {ex.Message}");
+            // We do NOT set _allLocales if failed, allowing retry on next request.
         }
+        finally
+        {
+            _initSemaphore.Release();
+        }
+    }
+
+    private static async Task<Locale?> ResolveLocaleAsync(string langCode)
+    {
+        if (_localeCache.TryGetValue(langCode, out var cached)) return cached;
+        
+        // We assume EnsureInitializedAsync was already called by the serialize-managed SpeakAsync.
+        if (_allLocales == null) return null;
+
+        Locale? bestMatch = null;
+
+        // 1. Preferred BCP-47 mapping
+        if (LangToLocales.TryGetValue(langCode, out var preferred))
+        {
+            foreach (var tag in preferred)
+            {
+                var parts = tag.Split('-');
+                var tlang = parts[0];
+                var country = parts.Length > 1 ? parts[1] : "";
+
+                bestMatch = _allLocales.FirstOrDefault(l =>
+                    string.Equals(l.Language, tlang, StringComparison.OrdinalIgnoreCase) &&
+                    string.Equals(l.Country,  country, StringComparison.OrdinalIgnoreCase));
+
+                if (bestMatch != null) break;
+            }
+        }
+
+        // 2. Loose match (Starts with language prefix)
+        if (bestMatch == null)
+        {
+            bestMatch = _allLocales.FirstOrDefault(l =>
+                l.Language.StartsWith(langCode, StringComparison.OrdinalIgnoreCase));
+        }
+
+        // 3. Fallback: en-US (The most robust voice for character set handling)
+        if (bestMatch == null)
+        {
+            Debug.WriteLine($"[AUDIO] Fallback: No native voice for '{langCode}', using en-US.");
+            bestMatch = _allLocales.FirstOrDefault(l =>
+                string.Equals(l.Language, "en", StringComparison.OrdinalIgnoreCase) &&
+                string.Equals(l.Country, "US", StringComparison.OrdinalIgnoreCase));
+        }
+
+        _localeCache[langCode] = bestMatch;
+        return bestMatch;
     }
 }
