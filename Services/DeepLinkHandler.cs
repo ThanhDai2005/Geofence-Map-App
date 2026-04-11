@@ -1,4 +1,5 @@
 using System.Threading.Tasks;
+using MauiApp1.ApplicationContracts.Services;
 using MauiApp1.Models;
 using System.Diagnostics;
 
@@ -10,11 +11,13 @@ namespace MauiApp1.Services;
 /// </summary>
 public class DeepLinkHandler
 {
-    private readonly PoiEntryCoordinator _coordinator;
+    private readonly IPoiEntryCoordinator _coordinator;
+    private readonly IQrScannerService _qr;
 
-    public DeepLinkHandler(PoiEntryCoordinator coordinator)
+    public DeepLinkHandler(IPoiEntryCoordinator coordinator, IQrScannerService qr)
     {
         _coordinator = coordinator;
+        _qr = qr;
     }
 
     /// <summary>
@@ -31,7 +34,7 @@ public class DeepLinkHandler
 
         Debug.WriteLine($"[DL-NAV] HandleIncomingLinkAsync raw={rawLink}");
 
-        var parsedPreview = QrResolver.Parse(rawLink);
+        var parsedPreview = await _qr.ParseAsync(rawLink).ConfigureAwait(false);
         if (parsedPreview.Success)
             Debug.WriteLine($"[DL-NAV] Parsed code={parsedPreview.Code}");
         else

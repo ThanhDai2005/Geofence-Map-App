@@ -29,7 +29,7 @@ public partial class LanguageSelectorPage : ContentPage
 
     private async void OnAddLanguageClicked(object sender, EventArgs e)
     {
-        var vm = Application.Current?.Windows.FirstOrDefault()?.Page?.Handler?.MauiContext?.Services.GetService<AddLanguageViewModel>();
+        var vm = Microsoft.Maui.Controls.Application.Current?.Windows.FirstOrDefault()?.Page?.Handler?.MauiContext?.Services.GetService<AddLanguageViewModel>();
         if (vm != null)
         {
             var page = new AddLanguagePage(vm, _navService);

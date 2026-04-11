@@ -7,6 +7,8 @@ namespace MauiApp1.Services;
 
 public sealed class PreferredLanguageService : IPreferredLanguageService
 {
+    private const string CustomDynamicLanguagesPrefKey = "custom_dynamic_languages";
+
     // Define the canonical, scalable list of supported languages
     public static readonly IReadOnlyList<LanguageInfo> SupportedLanguages = new List<LanguageInfo>
     {
@@ -63,6 +65,22 @@ public sealed class PreferredLanguageService : IPreferredLanguageService
     public static string NormalizeCode(string? code)
     {
         var c = string.IsNullOrWhiteSpace(code) ? "vi" : code.Trim().ToLowerInvariant();
-        return Codes.Contains(c) ? c : "vi";
+        if (Codes.Contains(c))
+            return c;
+
+        // Dynamic languages are persisted by LanguagePackService as a comma-separated list.
+        // If the language was added by the user, keep it instead of forcing fallback to vi.
+        var dynamicCodesRaw = Preferences.Get(CustomDynamicLanguagesPrefKey, "");
+        if (!string.IsNullOrWhiteSpace(dynamicCodesRaw))
+        {
+            var dynamicCodes = dynamicCodesRaw
+                .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .Select(x => x.ToLowerInvariant());
+
+            if (dynamicCodes.Contains(c))
+                return c;
+        }
+
+        return "vi";
     }
 }

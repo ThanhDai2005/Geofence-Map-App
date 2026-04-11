@@ -1,0 +1,11 @@
+$kind: http-request
+url: http://localhost:3000/api/v1/users/me/subscription/upgrade
+method: POST
+body:
+  type: json
+  content: ""
+auth:
+  type: bearer
+  credentials:
+    token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5ZDllNzgzOGZlYzY4MDNkZDBlY2UzMSIsImlhdCI6MTc3NTg4OTcwMCwiZXhwIjoxNzgzNjY1NzAwfQ.hMT2U0WHSOUnvODC_LlrW6XEWjQzxzgc3ytymZiOVCA
+order: 4345888029552256

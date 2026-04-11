@@ -1,3 +1,5 @@
+using MauiApp1.ApplicationContracts.Services;
+using MauiApp1.Models;
 using MauiApp1.Services;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
@@ -8,6 +10,8 @@ using Microsoft.Maui.Controls;
 using Microsoft.Maui;
 
 namespace MauiApp1.ViewModels;
+
+using MauiApp1.Application.UseCases;
 
 public class AvailableLanguage
 {
@@ -20,7 +24,8 @@ public class AvailableLanguage
 public class AddLanguageViewModel : INotifyPropertyChanged
 {
     private readonly MapViewModel _mapVm;
-    private readonly LanguagePackService _packService;
+    private readonly ILanguagePackService _packService;
+    private readonly GetAvailableLanguagesUseCase _getAvailableLanguagesUseCase;
     private readonly List<AvailableLanguage> _allSupportedLanguages = new();
 
     private bool _isBusy;
@@ -46,10 +51,11 @@ public class AddLanguageViewModel : INotifyPropertyChanged
 
     public event EventHandler? RequestClose;
 
-    public AddLanguageViewModel(MapViewModel mapVm, LanguagePackService packService)
+    public AddLanguageViewModel(MapViewModel mapVm, ILanguagePackService packService, GetAvailableLanguagesUseCase getAvailableLanguagesUseCase)
     {
         _mapVm = mapVm;
         _packService = packService;
+        _getAvailableLanguagesUseCase = getAvailableLanguagesUseCase;
 
         // A modest list of global languages for demo. Real app would have a larger ISO list.
         _allSupportedLanguages = new List<AvailableLanguage>
@@ -66,8 +72,6 @@ public class AddLanguageViewModel : INotifyPropertyChanged
         };
 
         // Filter out those already added
-        _allSupportedLanguages.RemoveAll(l => _packService.GetPack(l.Code) != null);
-
         FilterLanguages();
 
         SelectLanguageCommand = new Command<AvailableLanguage>(async (l) => await OnLanguageSelectedAsync(l));
@@ -76,14 +80,7 @@ public class AddLanguageViewModel : INotifyPropertyChanged
     private void FilterLanguages()
     {
         FilteredLanguages.Clear();
-        var query = SearchText?.Trim().ToLowerInvariant() ?? "";
-
-        var result = string.IsNullOrEmpty(query)
-            ? _allSupportedLanguages
-            : _allSupportedLanguages.Where(l =>
-                l.Code.Contains(query) ||
-                l.NativeName.ToLowerInvariant().Contains(query) ||
-                l.DisplayName.ToLowerInvariant().Contains(query));
+        var result = _getAvailableLanguagesUseCase.Execute(SearchText, _allSupportedLanguages);
 
         foreach (var lang in result)
         {
@@ -104,10 +101,10 @@ public class AddLanguageViewModel : INotifyPropertyChanged
             _packService.AddDynamicLanguage(lang.Code, lang.NativeName, lang.DisplayName);
 
             // Simulate/ensure a "download" step so UI size label behavior is consistent.
-            var hostPage = Application.Current?.Windows.FirstOrDefault()?.Page ?? Shell.Current;
+            var hostPage = Microsoft.Maui.Controls.Application.Current?.Windows.FirstOrDefault()?.Page ?? Shell.Current;
             var ensureResult = await _packService.EnsureAvailableAsync(lang.Code, hostPage!);
 
-            if (ensureResult != LanguagePackService.EnsureResult.Available)
+            if (ensureResult != LanguagePackEnsureResult.Available)
             {
                 // EnsureAvailableAsync already showed alert for most cases.
                 return;

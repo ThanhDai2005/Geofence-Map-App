@@ -1,0 +1,12 @@
+$kind: http-request
+url: http://localhost:3000/api/v1/pois/nearby?lat=10.7798&lng=106.6992&radius=1000
+method: GET
+queryParams:
+  lat: "10.7798"
+  lng: "106.6992"
+  radius: "1000"
+auth:
+  type: bearer
+  credentials:
+    token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5ZDllNzgzOGZlYzY4MDNkZDBlY2UzMSIsImlhdCI6MTc3NTg4OTQ4OCwiZXhwIjoxNzgzNjY1NDg4fQ.XnLaZTeKlDh8OKDOke3mX-6kiG4vc3qSpt49DU21lNg
+order: 2133076675832147

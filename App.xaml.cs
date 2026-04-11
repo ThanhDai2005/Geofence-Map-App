@@ -1,8 +1,8 @@
-﻿using MauiApp1.Services;
+using MauiApp1.Services;
 
 namespace MauiApp1;
 
-public partial class App : Application
+public partial class App : Microsoft.Maui.Controls.Application
 {
     private readonly IServiceProvider _services;
 
@@ -36,12 +36,52 @@ public partial class App : Application
 
         _services = services;
         MainPage = services.GetRequiredService<AppShell>();
+
+        StartBackgroundServices();
+
         System.Diagnostics.Debug.WriteLine("[DeepLink] App constructor exit");
+    }
+
+    private void StartBackgroundServices()
+    {
+        try
+        {
+            _services.GetService<BackgroundTaskService>()?.StartServices();
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[BACK-ERR] StartBackgroundServices: {ex}");
+        }
+    }
+
+    private void StopBackgroundServices()
+    {
+        try
+        {
+            _services.GetService<BackgroundTaskService>()?.StopServices();
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[BACK-ERR] StopBackgroundServices: {ex}");
+        }
+    }
+
+    protected override void OnStart()
+    {
+        base.OnStart();
+        StartBackgroundServices();
+    }
+
+    protected override void OnSleep()
+    {
+        base.OnSleep();
+        StopBackgroundServices();
     }
 
     protected override void OnResume()
     {
         base.OnResume();
+        StartBackgroundServices();
 #if ANDROID
         try
         {

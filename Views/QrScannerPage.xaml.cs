@@ -273,7 +273,7 @@ public partial class QrScannerPage : ContentPage
         if (_windowResumedSubscribed) return;
         try
         {
-            var win = Application.Current?.Windows?.FirstOrDefault();
+            var win = Microsoft.Maui.Controls.Application.Current?.Windows?.FirstOrDefault();
             if (win == null) return;
             win.Resumed += OnWindowResumed;
             _windowResumedSubscribed = true;
@@ -286,7 +286,7 @@ public partial class QrScannerPage : ContentPage
     {
         try
         {
-            var win = Application.Current?.Windows?.FirstOrDefault();
+            var win = Microsoft.Maui.Controls.Application.Current?.Windows?.FirstOrDefault();
             if (win == null) return;
             win.Resumed -= OnWindowResumed;
             _windowResumedSubscribed = false;

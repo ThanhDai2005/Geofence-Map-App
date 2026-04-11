@@ -1,3 +1,4 @@
+using MauiApp1.ApplicationContracts.Services;
 using MauiApp1.Models;
 using Microsoft.Maui.Storage;
 using System.Collections.ObjectModel;
@@ -15,7 +16,7 @@ namespace MauiApp1.Services;
 /// "vi" and "en" are always pre-downloaded and cannot be removed.
 /// All other languages are "downloadable" and require an explicit download step.
 /// </summary>
-public class LanguagePackService
+public class LanguagePackService : ILanguagePackService
 {
     private static readonly string PrefKeyPrefix = "lang_pack_downloaded_";
 
@@ -150,8 +151,6 @@ public class LanguagePackService
 
     // ── Main API ─────────────────────────────────────────────────────────────
 
-    public enum EnsureResult { Available, Downloading, UserCancelled, Offline, AlreadyDownloading }
-
     /// <summary>
     /// Ensures a language pack is available, handling network state and user prompts.
     /// <list type="bullet">
@@ -162,26 +161,27 @@ public class LanguagePackService
     ///   <item>Already downloading → returns <c>AlreadyDownloading</c> (no-op).</item>
     /// </list>
     /// </summary>
-    public async Task<EnsureResult> EnsureAvailableAsync(string code, Page hostPage)
+    public async Task<LanguagePackEnsureResult> EnsureAvailableAsync(string code, Page hostPage, CancellationToken cancellationToken = default)
     {
+        cancellationToken.ThrowIfCancellationRequested();
         var pack = GetPack(code);
         if (pack == null)
         {
             Debug.WriteLine($"[LANG-PACK] EnsureAvailableAsync: unknown code={code}");
-            return EnsureResult.Available; // treat unknown as available (fallback handles it)
+            return LanguagePackEnsureResult.Available; // treat unknown as available (fallback handles it)
         }
 
         if (pack.State == DownloadState.Downloaded)
         {
             Debug.WriteLine($"[LANG-PACK] {code}: already downloaded → Available");
-            return EnsureResult.Available;
+            return LanguagePackEnsureResult.Available;
         }
 
         // Prevent duplicate download: if already in progress, bail.
         if (pack.State == DownloadState.Downloading)
         {
             Debug.WriteLine($"[LANG-PACK] {code}: already downloading → AlreadyDownloading");
-            return EnsureResult.AlreadyDownloading;
+            return LanguagePackEnsureResult.AlreadyDownloading;
         }
 
         // Check network
@@ -195,7 +195,7 @@ public class LanguagePackService
                     "Không có kết nối",
                     $"Gói ngôn ngữ '{pack.NativeName}' chưa tải về và thiết bị đang offline.",
                     "OK"));
-            return EnsureResult.Offline;
+            return LanguagePackEnsureResult.Offline;
         }
 
         if (net == NetworkType.Cellular)
@@ -209,38 +209,39 @@ public class LanguagePackService
             if (!confirmed)
             {
                 Debug.WriteLine($"[LANG-PACK] {code}: user cancelled cellular download");
-                return EnsureResult.UserCancelled;
+                return LanguagePackEnsureResult.UserCancelled;
             }
         }
 
         // WiFi → silent download. Cellular → user confirmed. Start download.
-        return await DownloadAsync(pack);
+        return await DownloadAsync(pack, cancellationToken).ConfigureAwait(false);
     }
 
     // ── Download simulation ──────────────────────────────────────────────────
 
-    private async Task<EnsureResult> DownloadAsync(LanguagePack pack)
+    private async Task<LanguagePackEnsureResult> DownloadAsync(LanguagePack pack, CancellationToken cancellationToken = default)
     {
         // Short-circuit if another caller started the download first (race condition guard).
-        bool acquired = await _downloadGate.WaitAsync(0).ConfigureAwait(false);
+        bool acquired = await _downloadGate.WaitAsync(0, cancellationToken).ConfigureAwait(false);
         if (!acquired)
         {
             Debug.WriteLine($"[LANG-PACK] {pack.Code}: gate already held → AlreadyDownloading");
-            return EnsureResult.AlreadyDownloading;
+            return LanguagePackEnsureResult.AlreadyDownloading;
         }
 
         try
         {
+            cancellationToken.ThrowIfCancellationRequested();
             // Final check inside the gate.
-            if (pack.State == DownloadState.Downloaded) return EnsureResult.Available;
-            if (pack.State == DownloadState.Downloading) return EnsureResult.AlreadyDownloading;
+            if (pack.State == DownloadState.Downloaded) return LanguagePackEnsureResult.Available;
+            if (pack.State == DownloadState.Downloading) return LanguagePackEnsureResult.AlreadyDownloading;
 
             Debug.WriteLine($"[LANG-PACK] {pack.Code}: download started");
             await MainThread.InvokeOnMainThreadAsync(() => pack.State = DownloadState.Downloading);
 
             // Simulate network download (500ms – 1500ms).
             var delay = Random.Shared.Next(500, 1500);
-            await Task.Delay(delay).ConfigureAwait(false);
+            await Task.Delay(delay, cancellationToken).ConfigureAwait(false);
 
             // In a real implementation: download & extract the language file here.
             // For now, just update state and persist.
@@ -249,13 +250,13 @@ public class LanguagePackService
             Preferences.Set(PrefKeyPrefix + pack.Code, true);
 
             Debug.WriteLine($"[LANG-PACK] {pack.Code}: download complete ({delay}ms)");
-            return EnsureResult.Available;
+            return LanguagePackEnsureResult.Available;
         }
         catch (Exception ex)
         {
             Debug.WriteLine($"[LANG-PACK] {pack.Code}: download FAILED: {ex.Message}");
             await MainThread.InvokeOnMainThreadAsync(() => pack.State = DownloadState.Failed);
-            return EnsureResult.Offline; // treat network failure like offline for UX
+            return LanguagePackEnsureResult.Offline; // treat network failure like offline for UX
         }
         finally
         {
