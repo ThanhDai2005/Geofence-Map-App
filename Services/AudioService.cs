@@ -1,3 +1,4 @@
+using MauiApp1.ApplicationContracts.Services;
 using Microsoft.Maui.Media;
 using System.Diagnostics;
 using System.Collections.Concurrent;
@@ -12,7 +13,7 @@ namespace MauiApp1.Services;
 /// - Cold-start warm-up logic for Android stability.
 /// - Robust error handling without silent failures.
 /// </summary>
-public class AudioService
+public class AudioService : IAudioPlayerService
 {
     private readonly object _syncLock = new();
     private CancellationTokenSource? _currentCts;
@@ -51,8 +52,9 @@ public class AudioService
     /// Speaks <paramref name="text"/> using the TTS voice best matching <paramref name="languageCode"/>.
     /// Serializes all platform calls to prevent state corruption on Android/iOS.
     /// </summary>
-    public async Task SpeakAsync(string poiCode, string text, string languageCode)
+    public async Task SpeakAsync(string poiCode, string text, string languageCode, CancellationToken cancellationToken = default)
     {
+        cancellationToken.ThrowIfCancellationRequested();
         if (string.IsNullOrWhiteSpace(text)) return;
 
         CancellationTokenSource cts;
@@ -86,6 +88,7 @@ public class AudioService
         try
         {
             await _speakSemaphore.WaitAsync(cts.Token).ConfigureAwait(false);
+            cancellationToken.ThrowIfCancellationRequested();
         }
         catch (OperationCanceledException)
         {
@@ -130,6 +133,13 @@ public class AudioService
             _currentCts?.Cancel();
             Debug.WriteLine("[AUDIO] Stop requested");
         }
+    }
+
+    public Task StopAsync(CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        Stop();
+        return Task.CompletedTask;
     }
 
     // ─────────────────────────────────────────────────────────────────────────

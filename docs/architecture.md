@@ -1,67 +1,60 @@
-# Kiến trúc hiện tại (MVP)
+# VN-GO-Travel Project Architecture
 
-## Mục tiêu tài liệu
+## Architecture Overview
 
-Mô tả kiến trúc **đang chạy thật** trong app MAUI hiện tại. Không mô tả kiến trúc tương lai.
+The application is built using **.NET MAUI** and predominantly follows the **Model-View-ViewModel (MVVM)** architectural pattern. 
+It heavily utilizes **Dependency Injection (DI)** (configured in `MauiProgram.cs`) to decouple the UI from business logic and data access. The application combines this with a **Service-Oriented** structure where native device features (GPS, Text-To-Speech) and external APIs (Translation) are abstracted behind Singleton services.
 
-## 1) Thành phần chính
+### Core Architectural Concepts:
+- **Presentation Layer (MVVM):** `Views` (XAML + Code-behind) bind to `ViewModels`, allowing reactive UI updates via `INotifyPropertyChanged`.
+- **Service Layer / Application Logic:** Cross-cutting concerns and business logic are localized within `Services/` (e.g., `LocationService`, `AudioService`, `DeepLinkCoordinator`).
+- **Data Access Layer:** Uses SQLite (`PoiDatabase.cs`) for local persistence, optimized into a "Core Location Data vs. Localized Text" separation, storing geographic properties while hydrating text dynamically.
+- **Translation / API Layer:** Features a resilient chain of responsibility for translations. It requests translations from a primary API (`LangblyTranslationProvider`), optionally falls back to `GTranslateTranslationProvider`, and caches results in SQLite.
 
-- `Views/*`: giao diện (Map, QR, Detail, Explore, About, chọn ngôn ngữ).
-- `ViewModels/*`: điều phối dữ liệu UI theo MVVM.
-- `Services/*`: xử lý dữ liệu, GPS, geofence, âm thanh, QR, điều hướng.
-- `Models/*`: model POI, localization, kết quả parse QR, deep link.
-- `Resources/Raw/pois.json`: dữ liệu nội dung POI gốc.
+## Module Breakdown
 
-## 2) Vai trò service quan trọng
+| Module / Component Area | Responsibility | Key Files |
+| :--- | :--- | :--- |
+| **Views / Pages** | The UI presentation layer for the .NET MAUI App. Defines layouts in XAML and registers page routes. | `MapPage.xaml`, `QrScannerPage.xaml`, `ExplorePage.xaml`, `LanguageSelectorPage.xaml`, `PoiDetailPage.xaml` |
+| **ViewModels** | UI Data-Binding components. Holds application state corresponding to the Views, processes UX commands, and coordinates Services. | `MapViewModel.cs` (Central Hub), `QrScannerViewModel.cs`, `LanguageSelectorViewModel.cs`, `PoiDetailViewModel.cs` |
+| **Services (Business)** | Logic handlers representing features like Geofencing, Audio Text-To-Speech execution, Navigation parsing, and App State. | `AudioService.cs`, `GeofenceService.cs`, `LocationService.cs`, `PoiEntryCoordinator.cs` |
+| **Services (Translation)** | Interfaces and adapters connecting to translation APIs. Resolves runtime POI language fallback text. | `LocalizationService.cs`, `PoiTranslationService.cs`, `LangblyTranslationProvider.cs`, `LanguagePackService.cs` |
+| **Services (Deep Link)** | Coordinates mobile deep-linking logic, ensuring intents are queued and resolved when the `AppShell` becomes ready. | `DeepLinkCoordinator.cs`, `DeepLinkHandler.cs`, `PendingDeepLinkStore.cs` |
+| **Data Layer (Services)** | Abstraction over the SQLite database. Note: It is housed in the `Services` folder instead of a dedicated `Data` or `Repositories` layer. | `PoiDatabase.cs` |
+| **Models** | Pure C# data objects governing POIs, Geofence details, Translation Caches, and Language settings. | `Poi.cs`, `PoiLocalization.cs`, `PoiTranslationCacheEntry.cs`, `LanguagePack.cs` |
 
-- `PoiDatabase`
-  - Lưu SQLite local ở `FileSystem.AppDataDirectory/pois.db`.
-  - Lưu dữ liệu lõi POI (tọa độ, radius, priority, code).
-  - Có bảng cache dịch `PoiTranslationCacheEntry`.
+## Dependency Graph (Textual)
 
-- `LocalizationService`
-  - Nạp một lần từ `pois.json` vào dictionary in-memory.
-  - Trả về text theo ngôn ngữ + trạng thái fallback.
-  - Cấp dữ liệu lõi để seed DB lần đầu.
+1. **Entry Point**
+   - Application launches via `App.xaml.cs` -> loads `AppShell.xaml` -> Displays `MapPage`, `QrScannerPage`, etc.
+   - `MauiProgram.cs` wires up all dependencies into the DI Container.
 
-- `MapViewModel`
-  - Trung tâm cho màn map.
-  - Load POI từ DB, hydrate text theo ngôn ngữ, cập nhật pin.
-  - Điều phối phát audio ngắn/dài và đổi ngôn ngữ runtime.
+2. **Core Operations Graph (`MapViewModel` Node)**
+   - `MapViewModel` [Depends on] -> `LocationService` (Fetches GPS)
+   - `MapViewModel` [Depends on] -> `GeofenceService` (Proximity checking around POIs)
+   - `MapViewModel` [Depends on] -> `AudioService` (Dictation / Text-to-Speech)
+   - `MapViewModel` [Depends on] -> `CurrentPoiStore` (Listens to App State events)
 
-- `LocationService` + `GeofenceService`
-  - `LocationService`: xin quyền vị trí + lấy GPS hiện tại.
-  - `GeofenceService`: kiểm tra vào/ra vùng POI và trigger TTS.
+3. **Data & Translation Pipeline (`PoiDatabase` & Localization Nodes)**
+   - `MapViewModel` [Requests Data from] -> `PoiDatabase` (Gets core geographic DB rules)
+   - `MapViewModel` [Requests Text from] -> `LocalizationService` (Fetches language text)
+   - `LocalizationService` [Falls back to] -> `PoiTranslationService` (When text is missing)
+   - `PoiTranslationService` [Requests API] -> `LangblyTranslationProvider` -> falls back to `GTranslateTranslationProvider`
 
-- `AudioService`
-  - Bọc `TextToSpeech`.
-  - Có serialize call, debounce, chọn locale theo mã ngôn ngữ.
+4. **External Event Routing (`QrScanner` & Deep Linking Nodes)**
+   - OS Intent / Camera Scan -> `DeepLinkCoordinator` or `QrResolver` -> `PoiEntryCoordinator` -> Updates `CurrentPoiStore` -> (Event Triggers) -> `MapViewModel`.
 
-- `QrResolver` + `PoiEntryCoordinator`
-  - Parse input QR (`poi:CODE`, `poi://CODE`, URL `/poi/{CODE}`, `/p/{CODE}`).
-  - Kiểm tra POI tồn tại trong DB, sau đó điều hướng map/detail.
+## Observations (Important!)
 
-- `DeepLinkCoordinator` + `DeepLinkHandler`
-  - Nhận link từ Android intent (warm path), đợi shell sẵn sàng, rồi đẩy vào cùng pipeline điều hướng với QR.
+> [!CAUTION]
+> **Anti-Patterns & Technical Debt Identified**
+> 1. **"God Object" ViewModel:** The `MapViewModel.cs` is exceedingly large (~780 lines). It directly coordinates the database, GPS, geofencing, translation providers, background processes, and active audio sessions instead of delegating orchestration to a lower-level Domain layer.
+> 2. **Service Folder Overcrowding:** The local SQLite Repository (`PoiDatabase.cs`), external APIs (`LangblyTranslationProvider.cs`), model state holders (`CurrentPoiStore.cs`), and global app behaviors (`AppState.cs`) are all dumped into the same `Services/` folder. This harms codebase modularity.
+> 3. **Singleton vs Transient Misalignment:** `MapViewModel` is registered globally as a Singleton in `MauiProgram.cs`, whereas other ViewModels are Transient. While valid for keeping map state alive, holding onto system dependencies (`LocationService`, etc.) persistently runs a slight risk of memory leaks and unexpected behavior during Maui Page lifecycles.
+> 4. **Infinite Background Loops in ViewModel:** `MapViewModel` initializes `StartBackgroundPreloading()`, creating a `while(true)` task running every 5 seconds. ViewModels should typically not own infinite background-service processing lifecycles.
 
-## 3) Sơ đồ tổng quát (đúng hiện trạng)
-
-```mermaid
-flowchart LR
-    A[pois.json] --> B[LocalizationService in-memory lookup]
-    B --> C[MapViewModel / PoiDetailViewModel]
-    B --> D[PoiDatabase seed core POI]
-    D --> C
-    E[LocationService GPS] --> F[GeofenceService]
-    C --> F
-    F --> G[AudioService TTS]
-    H[QR / Deep Link input] --> I[QrResolver]
-    I --> J[PoiEntryCoordinator]
-    J --> C
-```
-
-## 4) Ranh giới kiến trúc hiện tại
-
-- Không có backend đồng bộ dữ liệu cho app MAUI.
-- `AdminWeb` là dự án riêng, không thuộc luồng runtime của app MAUI hiện tại.
-- Ưu tiên chạy ổn định local-first, chấp nhận một số giới hạn về đồng bộ nội dung và test tự động.
+> [!TIP]
+> **Strong Architectural Patterns Present**
+> 1. **Dynamic Data Hydration Pattern:** The application cleanly separates "Core Location" logic from "Localized Text". `PoiDatabase` holds optimized geographical data, which is hydrated with translated strings dynamically upon ViewModel access via the `CreateHydratedPoi` immutable clone method.
+> 2. **State Decoupling / Event Sourcing:** Features like Deep Links and QR code scanning do not force UI changes directly on other Views. Instead, they update singleton state containers (`CurrentPoiStore`), which the active components listen to and respond appropriately.
+> 3. **Concurrency Control:** High-risk async flows (like completely refreshing language sets) properly utilize `SemaphoreSlim` gates (`_langSwitchGate`) to serialize user requests and prevent race conditions.

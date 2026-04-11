@@ -1,3 +1,4 @@
+using MauiApp1.ApplicationContracts.Services;
 using MauiApp1.Models;
 using System.Diagnostics;
 using System.Text.Json;
@@ -5,32 +6,11 @@ using System.Text.Json;
 namespace MauiApp1.Services;
 
 /// <summary>
-/// Carries the result of a localization lookup including fallback metadata.
-/// Useful when the UI wants to know if the content is in the user's requested language
-/// or a fallback, so it can show a "translated from X" indicator.
-/// </summary>
-public readonly struct LocalizationResult
-{
-    public PoiLocalization? Localization { get; init; }
-
-    /// <summary>True when the returned localization is NOT in the requested language.</summary>
-    public bool IsFallback { get; init; }
-
-    /// <summary>The language code that was actually used (may differ from requested).</summary>
-    public string UsedLang { get; init; }
-
-    /// <summary>The explicitly requested language code.</summary>
-    public string RequestedLang { get; init; }
-
-    public static LocalizationResult Miss(string req) => new() { Localization = null, IsFallback = false, UsedLang = "", RequestedLang = req };
-}
-
-/// <summary>
 /// Singleton, in-memory localization service.
 /// Loads all POI text content from <c>pois.json</c> exactly once at startup.
 /// All subsequent lookups are O(1) and fully synchronous — safe to call from any thread.
 /// </summary>
-public sealed class LocalizationService
+public sealed class LocalizationService : ILocalizationService
 {
     // (Code_UPPER, lang_lower) → localized text block
     private readonly Dictionary<(string Code, string Lang), PoiLocalization> _lookup = new();
@@ -52,13 +32,15 @@ public sealed class LocalizationService
     /// Reads <c>pois.json</c> and builds the in-memory lookup + core POI list.
     /// Idempotent — safe to call multiple times; only the first call does work.
     /// </summary>
-    public async Task InitializeAsync()
+    public async Task InitializeAsync(CancellationToken cancellationToken = default)
     {
+        cancellationToken.ThrowIfCancellationRequested();
         if (_initialized) return;
 
-        await _initGate.WaitAsync().ConfigureAwait(false);
+        await _initGate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
+            cancellationToken.ThrowIfCancellationRequested();
             if (_initialized) return;   // double-check after acquiring gate
 
             using var stream = await FileSystem.OpenAppPackageFileAsync("pois.json").ConfigureAwait(false);

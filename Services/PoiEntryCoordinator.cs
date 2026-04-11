@@ -1,42 +1,35 @@
-using System;
-using System.Threading.Tasks;
-using MauiApp1.Models;
-using Microsoft.Maui.Controls;
-using Microsoft.Maui.ApplicationModel;
 using System.Diagnostics;
+using MauiApp1.ApplicationContracts.Repositories;
+using MauiApp1.ApplicationContracts.Services;
+using MauiApp1.Models;
+using Microsoft.Maui.ApplicationModel;
+using Microsoft.Maui.Controls;
 
 namespace MauiApp1.Services;
 
-public class PoiEntryResult
+public class PoiEntryCoordinator : IPoiEntryCoordinator
 {
-    public bool Success { get; set; }
-    public string? Error { get; set; }
-
-    /// <summary>False when <see cref="Success"/> is true but navigation was intentionally skipped (e.g. duplicate guard).</summary>
-    public bool Navigated { get; set; } = true;
-}
-
-public class PoiEntryCoordinator
-{
-    private readonly PoiDatabase          _db;
-    private readonly ViewModels.MapViewModel _mapVm;
-    private bool     _isHandling;
-    private string?  _lastHandledCode;
+    private readonly IPoiQueryRepository _poiQuery;
+    private readonly IQrScannerService _qr;
+    private readonly INavigationService _navService;
+    private readonly AppState _appState;
+    private bool _isHandling;
+    private string? _lastHandledCode;
     private DateTime _lastHandledAt = DateTime.MinValue;
 
-    private readonly CurrentPoiStore _currentPoiStore;
-
     public PoiEntryCoordinator(
-        PoiDatabase db,
-        ViewModels.MapViewModel mapVm,
-        CurrentPoiStore currentPoiStore)
+        IPoiQueryRepository poiQuery,
+        IQrScannerService qr,
+        INavigationService navService,
+        AppState appState)
     {
-        _db              = db;
-        _mapVm           = mapVm;
-        _currentPoiStore = currentPoiStore;
+        _poiQuery = poiQuery;
+        _qr       = qr;
+        _navService = navService;
+        _appState   = appState;
     }
 
-    public async Task<PoiEntryResult> HandleEntryAsync(PoiEntryRequest request)
+    public async Task<PoiEntryResult> HandleEntryAsync(PoiEntryRequest request, CancellationToken cancellationToken = default)
     {
         if (request == null) return new PoiEntryResult { Success = false, Error = "Request is null" };
 
@@ -49,7 +42,7 @@ public class PoiEntryCoordinator
             var raw = request.RawInput;
             Debug.WriteLine($"[QR-NAV] PoiEntryCoordinator.HandleEntryAsync start source={request.Source} rawLen={raw?.Length ?? 0}");
 
-            var parsed = QrResolver.Parse(raw);
+            var parsed = await _qr.ParseAsync(raw, cancellationToken).ConfigureAwait(false);
             if (!parsed.Success)
                 return new PoiEntryResult { Success = false, Error = parsed.Error ?? "Invalid QR" };
 
@@ -58,13 +51,12 @@ public class PoiEntryCoordinator
             // Update shared current POI state early so Map and other listeners can react.
             try
             {
-                _currentPoiStore?.SetCurrentPoi(code, request.PreferredLanguage);
-                Debug.WriteLine($"[QR-NAV] PoiEntryCoordinator set current POI code={code} lang={request.PreferredLanguage}");
+                _appState.SetSelectedPoiByCode(code);
+                Debug.WriteLine($"[QR-NAV] PoiEntryCoordinator set current POI code={code}");
             }
             catch { }
 
-            // Avoid immediate duplicate navigation for the same code within a short cooldown window.
-            // This is a lightweight guard against accidental double-trigger (e.g., rapid scans/taps).
+            // TODO: Move to UseCase (Stage 4) — duplicate navigation guard / cooldown policy.
             try
             {
                 if (!string.IsNullOrEmpty(_lastHandledCode) && string.Equals(_lastHandledCode, code, StringComparison.OrdinalIgnoreCase))
@@ -79,19 +71,15 @@ public class PoiEntryCoordinator
             }
             catch { }
 
-            await _db.InitAsync();
+            await _poiQuery.InitAsync(cancellationToken).ConfigureAwait(false);
 
             Debug.WriteLine($"[QR-NAV] PoiEntryCoordinator parsed code={code}");
 
-            // Use the current MapViewModel language (always valid, never empty) — BUG-5 fix.
-            // Do NOT use poi.LanguageCode: after the DB refactor GetOrTranslateAsync returns a
-            // core Poi with Localization=null, making LanguageCode an empty string.
             var preferred = !string.IsNullOrWhiteSpace(request.PreferredLanguage)
                 ? request.PreferredLanguage
-                : _mapVm.CurrentLanguage;
+                : _appState.CurrentLanguage;
 
-            // Verify POI exists via core POI lookup in SQLite.
-            var core = await _db.GetByCodeAsync(code).ConfigureAwait(false);
+            var core = await _poiQuery.GetByCodeAsync(code, null, cancellationToken).ConfigureAwait(false);
             if (core == null)
                 return new PoiEntryResult { Success = false, Error = "POI not found in database" };
 
@@ -118,10 +106,7 @@ public class PoiEntryCoordinator
                 Debug.WriteLine("[DL-NAV] Navigation to PoiDetail started");
             }
 
-            await MainThread.InvokeOnMainThreadAsync(async () =>
-            {
-                await Shell.Current.GoToAsync(route);
-            });
+            await _navService.NavigateToAsync(route);
 
             if (request.Source == PoiEntrySource.FutureDeepLink
                 && request.NavigationMode == PoiNavigationMode.Detail)
@@ -129,7 +114,6 @@ public class PoiEntryCoordinator
                 Debug.WriteLine("[DL-NAV] Navigation completed");
             }
 
-            // record last handled code/time for duplicate suppression
             try
             {
                 _lastHandledCode = code;

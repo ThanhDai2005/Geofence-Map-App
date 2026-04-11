@@ -4,6 +4,7 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
+using MauiApp1.ApplicationContracts.Services;
 using MauiApp1.Models;
 using MauiApp1.Services;
 using Microsoft.Maui.ApplicationModel;
@@ -25,11 +26,14 @@ public enum QrScannerUxPhase
 
 public class QrScannerViewModel : INotifyPropertyChanged
 {
-    private readonly PoiEntryCoordinator _coordinator;
+    private readonly IPoiEntryCoordinator _coordinator;
+    private readonly IQrScannerService _qr;
     private readonly MapViewModel _mapVm;
+    private readonly INavigationService _navService;
 
     private bool _isHandlingScan;
     private CancellationTokenSource? _errorResetCts;
+    private CancellationTokenSource? _scanCts;
 
     private string _inputText = string.Empty;
     private string _uxStatusText = "Đưa mã QR vào khung quét";
@@ -40,10 +44,12 @@ public class QrScannerViewModel : INotifyPropertyChanged
     private string? _lastAcceptedNormalizedKey;
     private DateTime _lastAcceptedAtUtc = DateTime.MinValue;
 
-    public QrScannerViewModel(PoiEntryCoordinator coordinator, MapViewModel mapVm)
+    public QrScannerViewModel(IPoiEntryCoordinator coordinator, IQrScannerService qr, MapViewModel mapVm, INavigationService navService)
     {
         _coordinator = coordinator;
+        _qr = qr;
         _mapVm = mapVm;
+        _navService = navService;
         ScanCommand = new Command(async () => await ScanAsync(), () => !IsProcessingScan);
         CancelCommand = new Command(async () => await CancelAsync());
     }
@@ -129,6 +135,10 @@ public class QrScannerViewModel : INotifyPropertyChanged
         _errorResetCts?.Dispose();
         _errorResetCts = null;
 
+        _scanCts?.Cancel();
+        _scanCts?.Dispose();
+        _scanCts = null;
+
         _isHandlingScan = false;
         IsProcessingScan = false;
         UxDetailError = string.Empty;
@@ -140,15 +150,17 @@ public class QrScannerViewModel : INotifyPropertyChanged
 
     public async Task ScanAsync()
     {
-        await SubmitCodeAsync(InputText, "Manual");
+        await MainThread.InvokeOnMainThreadAsync(async () =>
+        {
+            await SubmitCodeAsync(InputText, "Manual");
+        });
     }
 
     public async Task CancelAsync()
     {
-        await MainThread.InvokeOnMainThreadAsync(async () =>
-        {
-            await Shell.Current.GoToAsync("..");
-        });
+        Debug.WriteLine("[QR-NAV] User cancelled scan");
+        _scanCts?.Cancel();
+        await _navService.GoBackAsync();
     }
 
     public Task<bool> HandleScannedCodeAsync(string scanned) =>
@@ -182,6 +194,11 @@ public class QrScannerViewModel : INotifyPropertyChanged
         ApplyPhase(QrScannerUxPhase.OpeningPoi);
         Debug.WriteLine("[QR-STATE] Opening POI phase (coordinator)");
 
+        _scanCts?.Cancel();
+        _scanCts?.Dispose();
+        _scanCts = new CancellationTokenSource();
+        var token = _scanCts.Token;
+
         (ScanCommand as Command)?.ChangeCanExecute();
 
         var success = false;
@@ -199,7 +216,9 @@ public class QrScannerViewModel : INotifyPropertyChanged
 
             Debug.WriteLine($"[QR-NAV] Opening POI flow via PoiEntryCoordinator source={source}");
 
+            token.ThrowIfCancellationRequested();
             var result = await _coordinator.HandleEntryAsync(request);
+            token.ThrowIfCancellationRequested();
 
             if (!result.Success)
             {
@@ -217,13 +236,20 @@ public class QrScannerViewModel : INotifyPropertyChanged
             }
 
             success = true;
-            var preview = QrResolver.Parse(rawText);
+            var preview = await _qr.ParseAsync(rawText, token).ConfigureAwait(false);
             var key = preview.Success ? preview.Code! : rawText.Trim();
             _lastAcceptedNormalizedKey = key;
             _lastAcceptedAtUtc = DateTime.UtcNow;
             Debug.WriteLine($"[QR-SCAN] Accepted scan value={key} source={source}");
             Debug.WriteLine("[QR-NAV] Navigation completed (coordinator returned success)");
             return true;
+        }
+        catch (OperationCanceledException)
+        {
+            Debug.WriteLine($"[QR-SCAN] SubmitCodeAsync source={source} CANCELLED");
+            ApplyPhase(QrScannerUxPhase.Ready);
+            UxStatusText = "Đã hủy quét";
+            return false;
         }
         catch (Exception ex)
         {
@@ -319,6 +345,7 @@ public class QrScannerViewModel : INotifyPropertyChanged
     /// <summary>Normalized key for frame-level dedupe (POI code if parseable, else trimmed raw).</summary>
     public static string GetDedupeKey(string raw)
     {
+        // TODO: Move to UseCase (Stage 4) — static helper; inject IQrScannerService at call sites if needed.
         var p = QrResolver.Parse(raw);
         return p.Success ? p.Code! : raw.Trim();
     }

@@ -161,7 +161,7 @@ public sealed class DeepLinkCoordinator
                 return false;
             }
 
-            if (Application.Current?.Windows is null || Application.Current.Windows.Count == 0)
+            if (Microsoft.Maui.Controls.Application.Current?.Windows is null || Microsoft.Maui.Controls.Application.Current.Windows.Count == 0)
             {
                 Debug.WriteLine("[DL-DISPATCH] No application windows yet");
                 return false;

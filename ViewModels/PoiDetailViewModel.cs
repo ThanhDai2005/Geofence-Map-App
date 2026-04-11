@@ -1,6 +1,9 @@
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
+using MauiApp1.ApplicationContracts.Repositories;
+using MauiApp1.Application.UseCases;
+using MauiApp1.ApplicationContracts.Services;
 using MauiApp1.Models;
 using MauiApp1.Services;
 using Microsoft.Maui.ApplicationModel;
@@ -10,27 +13,37 @@ namespace MauiApp1.ViewModels;
 
 public class PoiDetailViewModel : INotifyPropertyChanged, IQueryAttributable
 {
-    private readonly PoiDatabase              _db;
-    private readonly LocalizationService      _locService;
-    private readonly AudioService             _audioService;
+    private readonly GetPoiDetailUseCase _getPoiDetailUseCase;
+    private readonly PlayPoiAudioUseCase _playPoiAudioUseCase;
+    private readonly ILocalizationService _locService;
+    private readonly PoiNarrationService      _narrationService;
     private readonly MapViewModel             _mapVm;
     private readonly IPreferredLanguageService _languagePrefs;
+    private readonly INavigationService      _navService;
+    private readonly AppState                _appState;
 
     private string? _lastLoadedCode;
     private bool    _languageListenerAttached;
+    private CancellationTokenSource? _loadingCts;
 
     public PoiDetailViewModel(
-        PoiDatabase db,
-        LocalizationService locService,
-        AudioService audioService,
+        GetPoiDetailUseCase getPoiDetailUseCase,
+        PlayPoiAudioUseCase playPoiAudioUseCase,
+        ILocalizationService locService,
+        PoiNarrationService narrationService,
         MapViewModel mapVm,
-        IPreferredLanguageService languagePrefs)
+        IPreferredLanguageService languagePrefs,
+        INavigationService navService,
+        AppState appState)
     {
-        _db            = db;
-        _locService    = locService;
-        _audioService  = audioService;
-        _mapVm         = mapVm;
-        _languagePrefs = languagePrefs;
+        _getPoiDetailUseCase = getPoiDetailUseCase;
+        _playPoiAudioUseCase = playPoiAudioUseCase;
+        _locService       = locService;
+        _narrationService = narrationService;
+        _mapVm            = mapVm;
+        _languagePrefs    = languagePrefs;
+        _navService       = navService;
+        _appState         = appState;
     }
 
     // ── Language change listener ──────────────────────────────────────────────
@@ -65,6 +78,13 @@ public class PoiDetailViewModel : INotifyPropertyChanged, IQueryAttributable
 
     // ── Bindable properties ───────────────────────────────────────────────────
 
+    private bool _isBusy;
+    public bool IsBusy
+    {
+        get => _isBusy;
+        private set { _isBusy = value; OnPropertyChanged(); }
+    }
+
     private Poi? _poi;
     public Poi? Poi
     {
@@ -79,19 +99,10 @@ public class PoiDetailViewModel : INotifyPropertyChanged, IQueryAttributable
         }
     }
 
-    private bool _isNavigatingToMap;
-
-    private bool _isBusy;
-    public bool IsBusy
-    {
-        get => _isBusy;
-        set { _isBusy = value; OnPropertyChanged(); }
-    }
-
     // ── Shell query attributes ────────────────────────────────────────────────
 
     // Button UI should follow the current app UI language, not the POI fallback language.
-    private string EffectiveLang => _mapVm.CurrentLanguage;
+    private string EffectiveLang => _appState.CurrentLanguage;
 
     public string OpenOnMapButtonText => EffectiveLang switch
     {
@@ -122,15 +133,29 @@ public class PoiDetailViewModel : INotifyPropertyChanged, IQueryAttributable
 
     public async void ApplyQueryAttributes(IDictionary<string, object> query)
     {
-        if (query.TryGetValue("code", out var cobj) && cobj is string code)
+        try
         {
-            string? lang = null;
-            if (query.TryGetValue("lang", out var lobj) && lobj is string lstr)
-                lang = lstr;
+            if (query.TryGetValue("code", out var cobj) && cobj is string code)
+            {
+                string? lang = null;
+                if (query.TryGetValue("lang", out var lobj) && lobj is string lstr)
+                    lang = lstr;
 
-            Debug.WriteLine($"[QR-NAV] PoiDetail ApplyQueryAttributes code='{code}' lang='{lang}'");
-            await LoadPoiAsync(code, lang);
-            Debug.WriteLine($"[QR-NAV] PoiDetail ApplyQueryAttributes done Poi null?={Poi == null}");
+                Debug.WriteLine($"[QR-NAV] PoiDetail ApplyQueryAttributes code='{code}' lang='{lang}'");
+
+                // Cancel any existing loading task
+                _loadingCts?.Cancel();
+                _loadingCts?.Dispose();
+                _loadingCts = new CancellationTokenSource();
+
+                await LoadPoiAsync(code, lang, _loadingCts.Token);
+                Debug.WriteLine($"[QR-NAV] PoiDetail ApplyQueryAttributes done Poi null?={Poi == null}");
+            }
+        }
+        catch (OperationCanceledException) { }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[POI-DETAIL] Entry error: {ex}");
         }
     }
 
@@ -140,19 +165,15 @@ public class PoiDetailViewModel : INotifyPropertyChanged, IQueryAttributable
     /// Loads a POI by code from the database and attaches localization from the
     /// in-memory <see cref="LocalizationService"/> — no PoiTranslationService call.
     /// </summary>
-    public async Task LoadPoiAsync(string code, string? lang = null)
+    public async Task LoadPoiAsync(string code, string? lang = null, CancellationToken ct = default)
     {
         if (IsBusy) return;
         IsBusy = true;
         try
         {
-            await _db.InitAsync().ConfigureAwait(false);
-
             // Initialize the localization lookup if it hasn't been loaded yet.
-            // This is a no-op when MapViewModel.LoadPoisAsync() has already run,
-            // but is REQUIRED here for paths where PoiDetailPage is the first screen
-            // (e.g. QR deep link, external camera scan → open app → PoiDetail).
             await _locService.InitializeAsync().ConfigureAwait(false);
+            ct.ThrowIfCancellationRequested();
 
             _lastLoadedCode  = code.Trim().ToUpperInvariant();
             var effectiveLang = string.IsNullOrWhiteSpace(lang)
@@ -161,8 +182,10 @@ public class PoiDetailViewModel : INotifyPropertyChanged, IQueryAttributable
 
             Debug.WriteLine($"[POI-DETAIL] LoadPoiAsync code='{_lastLoadedCode}' lang='{effectiveLang}'");
 
-            // Fetch core geo data from SQLite
-            var core = await _db.GetByCodeAsync(_lastLoadedCode).ConfigureAwait(false);
+            // Fetch core geo data using UseCase
+            var core = await _getPoiDetailUseCase.ExecuteAsync(_lastLoadedCode, ct).ConfigureAwait(false);
+            ct.ThrowIfCancellationRequested();
+
             if (core == null)
             {
                 Debug.WriteLine($"[POI-DETAIL] No core POI found for code='{_lastLoadedCode}'");
@@ -170,11 +193,10 @@ public class PoiDetailViewModel : INotifyPropertyChanged, IQueryAttributable
                 return;
             }
 
-            // Attach localization from in-memory lookup (BUG-1 fix)
+            // Attach localization from in-memory lookup
             var locResult = _locService.GetLocalizationResult(_lastLoadedCode, effectiveLang);
-            Debug.WriteLine($"[POI-DETAIL] Localization found={locResult.Localization != null} name='{locResult.Localization?.Name}' fallback={locResult.IsFallback}");
-
-            // New Poi instance — ensures MAUI bindings update (BUG-3 fix)
+            
+            // New Poi instance — ensures MAUI bindings update
             var poi = new Poi
             {
                 Id        = core.Id,
@@ -188,21 +210,20 @@ public class PoiDetailViewModel : INotifyPropertyChanged, IQueryAttributable
                 RequestedLanguage = locResult.RequestedLang
             };
             poi.Localization = locResult.Localization;
-            Poi = poi;
-
-            // Keep global store and MapViewModel in sync
-            var setLang = effectiveLang;
-            _mapVm?.RequestFocusOnPoiCode(code, setLang);
-            try
+            
+            await MainThread.InvokeOnMainThreadAsync(() =>
             {
-                var store = (MauiApp1.Services.CurrentPoiStore?)
-                    App.Current?.Handler?.MauiContext?.Services
-                       .GetService(typeof(MauiApp1.Services.CurrentPoiStore));
-                store?.SetCurrentPoi(code, setLang);
-            }
-            catch { }
+                Poi = poi;
+                // Keep global state and MapViewModel in sync
+                _mapVm?.RequestFocusOnPoiCode(code, effectiveLang);
+                _appState.SetSelectedPoiByCode(code);
+            });
 
-            Debug.WriteLine($"[POI-DETAIL] LoadPoiAsync done Poi null?={Poi == null}");
+            Debug.WriteLine($"[POI-DETAIL] LoadPoiAsync completed for {_lastLoadedCode}");
+        }
+        catch (OperationCanceledException) 
+        {
+            Debug.WriteLine($"[POI-DETAIL] Loading cancelled for {code}");
         }
         catch (Exception ex)
         {
@@ -218,41 +239,31 @@ public class PoiDetailViewModel : INotifyPropertyChanged, IQueryAttributable
 
     public async Task PlayAsync()
     {
-        if (Poi == null) return;
-
-        // Use current preferred language for TTS locale — not Poi.LanguageCode
-        // (which may be stale if the user switched language after loading).
-        var lang = _languagePrefs.GetStoredOrDefault();
-
-        var text = !string.IsNullOrWhiteSpace(Poi.Localization?.NarrationLong)
-            ? Poi.Localization.NarrationLong
-            : (!string.IsNullOrWhiteSpace(Poi.Localization?.NarrationShort) ? Poi.Localization.NarrationShort : (Poi.Localization?.Name ?? ""));
-
-        Debug.WriteLine($"[POI-DETAIL] PlayAsync lang={lang} textLen={text?.Length ?? 0}");
-
-        if (!string.IsNullOrWhiteSpace(text))
-            await _audioService.SpeakAsync(Poi.Code, text, lang);
+        if (Poi == null || IsBusy) return;
+        IsBusy = true;
+        try
+        {
+            await _playPoiAudioUseCase.ExecuteAsync(Poi.Code, "currentUserId");
+        }
+        finally
+        {
+            IsBusy = false;
+        }
     }
 
-    public void Stop() => _audioService.Stop();
+    public void Stop() => _narrationService.Stop();
 
     // ── Navigation: open on map ───────────────────────────────────────────────
 
     public async Task OpenOnMapAsync()
     {
-        if (Poi == null || string.IsNullOrWhiteSpace(Poi.Code))
+        if (Poi == null || IsBusy)
         {
-            Debug.WriteLine("[QR-NAV] OpenOnMapAsync skipped: no Poi/code");
+            Debug.WriteLine("[QR-NAV] OpenOnMapAsync skipped: no Poi or busy");
             return;
         }
 
-        if (_isNavigatingToMap)
-        {
-            Debug.WriteLine("[QR-NAV] OpenOnMapAsync skipped: already navigating");
-            return;
-        }
-
-        _isNavigatingToMap = true;
+        IsBusy = true;
         try
         {
             // Use current preferred language — not Poi.LanguageCode (BUG-5 fix)
@@ -260,7 +271,7 @@ public class PoiDetailViewModel : INotifyPropertyChanged, IQueryAttributable
             _mapVm.RequestFocusOnPoiCode(Poi.Code, lang);
 
             Debug.WriteLine($"[MAP-NAV] OpenOnMapAsync navigating to //map code='{Poi.Code}' lang='{lang}'");
-            await Shell.Current.GoToAsync("//map");
+            await _navService.NavigateToAsync("//map");
             Debug.WriteLine("[MAP-NAV] OpenOnMapAsync GoToAsync //map completed");
         }
         catch (Exception ex)
@@ -269,7 +280,7 @@ public class PoiDetailViewModel : INotifyPropertyChanged, IQueryAttributable
         }
         finally
         {
-            _isNavigatingToMap = false;
+            IsBusy = false;
         }
     }
 

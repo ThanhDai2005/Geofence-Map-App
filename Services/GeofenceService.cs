@@ -1,13 +1,17 @@
+using MauiApp1.ApplicationContracts.Services;
 using MauiApp1.Models;
+using Microsoft.Maui.ApplicationModel;
 using Microsoft.Maui.Devices.Sensors;
+using System.Collections.Generic;
 using System.Diagnostics;
+
 
 namespace MauiApp1.Services;
 
-public class GeofenceService
+public class GeofenceService : IGeofenceService
 {
-    private readonly AudioService _audioService;
-    private List<Poi> _pois = new();
+    private readonly IAudioPlayerService _audioService;
+    private readonly AppState _appState;
     private readonly SemaphoreSlim _gate = new(1, 1);
     private string? _currentActivePoiId;
     private readonly Dictionary<string, DateTime> _lastTriggeredAt = new();
@@ -21,25 +25,33 @@ public class GeofenceService
     private double? _lastLon;
     private DateTime _lastLocationTime = DateTime.MinValue;
 
-    public string CurrentLanguage { get; set; } = "vi";
-
-    public GeofenceService(AudioService audioService)
+    public GeofenceService(IAudioPlayerService audioService, AppState appState)
     {
         _audioService = audioService;
+        _appState = appState;
+
+        // Reset tracking when the global POI set changes (e.g. on language switch or initial load)
+        _appState.PoisChanged += (s, e) => ResetInternalTracking();
     }
 
-    public void UpdatePois(IEnumerable<Poi> pois)
+    private void ResetInternalTracking()
     {
-        _pois = pois.ToList();
         _currentActivePoiId = null;
         lock (_lastTriggeredAt)
             _lastTriggeredAt.Clear();
+        Debug.WriteLine("[GEOFENCE] Internal tracking reset due to state change");
     }
 
-    public async Task CheckLocationAsync(Location location)
+    public async Task CheckLocationAsync(Location location, CancellationToken cancellationToken = default)
     {
+        cancellationToken.ThrowIfCancellationRequested();
         // Quick sanity
         if (location == null) return;
+        if (_appState.IsModalOpen)
+        {
+            Debug.WriteLine("[GEOFENCE] Skipping check: UI Modal is open");
+            return;
+        }
 
         var now = DateTime.UtcNow;
 
@@ -79,8 +91,15 @@ public class GeofenceService
         {
             Debug.WriteLine($"[GEOFENCE] Location received lat={location.Latitude:0.000000} lon={location.Longitude:0.000000} at {now:O}");
 
-            // Evaluate candidate POIs within their radius
-            var candidates = _pois
+            // THREAD SAFETY: Take a snapshot of Pois on the main thread to prevent
+            // enumeration crashes if the collection is modified concurrently.
+            List<Poi> poisSnapshot = new();
+            await MainThread.InvokeOnMainThreadAsync(() =>
+            {
+                poisSnapshot = _appState.Pois.ToList();
+            });
+
+            var candidates = poisSnapshot
                 .Select(p => new { Poi = p, Distance = DistanceInMeters(location.Latitude, location.Longitude, p.Latitude, p.Longitude) })
                 .Where(x => x.Distance <= x.Poi.Radius)
                 .OrderByDescending(x => x.Poi.Priority)
@@ -154,9 +173,12 @@ public class GeofenceService
                 _lastTriggeredAt[poi.Id] = now;
             }
 
+            // TODO: Move to UseCase (Stage 4) — proximity selection, cooldown, and narration policy.
             var text = !string.IsNullOrWhiteSpace(poi.Localization?.NarrationShort) ? poi.Localization.NarrationShort : (poi.Localization?.Name ?? "");
             Debug.WriteLine($"[GEOFENCE] Triggering POI id={poi.Id} code={poi.Code} textLen={text?.Length ?? 0}");
-            await _audioService.SpeakAsync(poi.Code, text, CurrentLanguage);
+            
+            // Use global language from AppState
+            await _audioService.SpeakAsync(poi.Code, text, _appState.CurrentLanguage, cancellationToken).ConfigureAwait(false);
         }
         catch (Exception ex)
         {

@@ -1,0 +1,11 @@
+$kind: http-request
+name: 3. Get POI Detail
+url: http://localhost:3000/api/v1/pois/code/HO?lang=vi
+method: GET
+queryParams:
+  lang: vi
+auth:
+  type: bearer
+  credentials:
+    token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5ZDllNzgzOGZlYzY4MDNkZDBlY2UzMSIsImlhdCI6MTc3NTg4OTcwMCwiZXhwIjoxNzgzNjY1NzAwfQ.hMT2U0WHSOUnvODC_LlrW6XEWjQzxzgc3ytymZiOVCA
+order: 2899616472747521

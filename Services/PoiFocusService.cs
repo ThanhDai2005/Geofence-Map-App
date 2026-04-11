@@ -1,0 +1,144 @@
+using System.Diagnostics;
+using MauiApp1.ApplicationContracts.Repositories;
+using MauiApp1.ApplicationContracts.Services;
+using MauiApp1.Models;
+
+namespace MauiApp1.Services;
+
+/// <summary>
+/// Resolves a POI by code, attaches the correct localization, and sets
+/// <see cref="AppState.SelectedPoi"/> to a <em>new</em> instance (binding-safe).
+/// Also manages the pending-focus inbox used by PoiDetailPage → MapPage coordination.
+///
+/// Extracted from MapViewModel (~65 lines of async lookup + pending queue management).
+/// </summary>
+public class PoiFocusService
+{
+    private readonly IPoiQueryRepository _poiQuery;
+    private readonly ILocalizationService _locService;
+    private readonly IPoiTranslationService _poiTranslationService;
+    private readonly AppState _appState;
+
+    // Pending focus request — written by PoiDetailPage, consumed by MapPage on Appearing.
+    private string? _pendingFocusPoiCode;
+    private string? _pendingFocusPoiLang;
+
+    public PoiFocusService(
+        IPoiQueryRepository poiQuery,
+        ILocalizationService locService,
+        IPoiTranslationService poiTranslationService,
+        AppState appState)
+    {
+        _poiQuery = poiQuery;
+        _locService = locService;
+        _poiTranslationService = poiTranslationService;
+        _appState = appState;
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Focus resolution
+    // ─────────────────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Resolves a POI by code, attaches the correct localization, and sets
+    /// <see cref="AppState.SelectedPoi"/> to a <em>new</em> instance (binding-safe).
+    /// <para>
+    /// Uses <see cref="LocalizationService"/> — does NOT call
+    /// <c>PoiTranslationService</c> for vi/en (which are always available in pois.json)
+    /// but DOES call it for other languages when the result is a fallback (BUG-1 fix).
+    /// </para>
+    /// </summary>
+    public async Task FocusOnPoiByCodeAsync(string code, string? lang = null)
+    {
+        if (string.IsNullOrWhiteSpace(code)) return;
+
+        var normalizedCode = code.Trim().ToUpperInvariant();
+        var preferred      = string.IsNullOrWhiteSpace(lang)
+                             ? _appState.CurrentLanguage
+                             : lang.Trim().ToLowerInvariant();
+
+        Debug.WriteLine($"[Map-VM] FocusOnPoiByCodeAsync code={normalizedCode} lang={preferred}");
+
+        _appState.IsTranslating = true;
+        try
+        {
+            // Ensure localization lookup is ready — required when this is called before
+            // LoadPoisAsync() runs (e.g. QR scan → Map tab is the first screen touched).
+            await _locService.InitializeAsync().ConfigureAwait(false);
+
+            // Prefer already-loaded geo data from the in-memory Pois collection.
+            // Access ObservableCollection on main thread to prevent enumeration races.
+            Poi? core = null;
+            await MainThread.InvokeOnMainThreadAsync(() =>
+            {
+                core = _appState.Pois.FirstOrDefault(p => p.Code == normalizedCode);
+            });
+
+            if (core == null)
+            {
+                // POI not yet in the collection (e.g. QR scan before map finishes loading).
+                await _poiQuery.InitAsync().ConfigureAwait(false);
+                core = await _poiQuery.GetByCodeAsync(normalizedCode).ConfigureAwait(false);
+            }
+
+            if (core == null)
+            {
+                Debug.WriteLine($"[Map-VM] FocusOnPoiByCodeAsync: no POI found for code={normalizedCode}");
+                return;
+            }
+
+            var locResult = _locService.GetLocalizationResult(normalizedCode, preferred);
+            Debug.WriteLine($"[Map-VM] FocusOnPoiByCodeAsync: loc found={locResult.Localization != null} name='{locResult.Localization?.Name}' fallback={locResult.IsFallback}");
+
+            // On-demand dynamic translation check
+            if (locResult.IsFallback && preferred != "vi" && preferred != "en")
+            {
+                var translatedPoi = await _poiTranslationService.GetOrTranslateAsync(normalizedCode, preferred).ConfigureAwait(false);
+                if (translatedPoi != null && translatedPoi.Localization != null)
+                {
+                    _locService.RegisterDynamicTranslation(normalizedCode, preferred, translatedPoi.Localization);
+                    locResult = _locService.GetLocalizationResult(normalizedCode, preferred);
+                    Debug.WriteLine($"[Map-VM] Dynamic translation activated for {normalizedCode}");
+                }
+            }
+
+            // Always a new instance → fires PropertyChanged("SelectedPoi") → MAUI re-reads bindings (BUG-3 fix)
+            var hydratedPoi = PoiHydrationService.CreateHydratedPoi(core, locResult);
+            await MainThread.InvokeOnMainThreadAsync(() =>
+            {
+                _appState.SelectedPoi = hydratedPoi;
+            });
+        }
+        finally
+        {
+            _appState.IsTranslating = false;
+        }
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Pending focus inbox
+    // ─────────────────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Stores a pending focus request to be consumed by MapPage on its next Appearing event.
+    /// </summary>
+    public void RequestFocusOnPoiCode(string code, string? lang = null)
+    {
+        if (string.IsNullOrWhiteSpace(code)) return;
+        _pendingFocusPoiCode = code.Trim().ToUpperInvariant();
+        _pendingFocusPoiLang = string.IsNullOrWhiteSpace(lang) ? null : lang.Trim().ToLowerInvariant();
+        Debug.WriteLine($"[Map-VM] Pending focus code='{_pendingFocusPoiCode}' lang='{_pendingFocusPoiLang}'");
+    }
+
+    /// <summary>
+    /// Consumes and clears the pending focus request. Returns (null, null) if none is queued.
+    /// </summary>
+    public (string? code, string? lang) ConsumePendingFocusRequest()
+    {
+        var code = _pendingFocusPoiCode;
+        var lang = _pendingFocusPoiLang;
+        _pendingFocusPoiCode = null;
+        _pendingFocusPoiLang = null;
+        return (code, lang);
+    }
+}

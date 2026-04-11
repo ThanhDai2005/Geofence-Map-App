@@ -23,6 +23,7 @@ public partial class MapPage : ContentPage, IQueryAttributable
 
     private bool _isTracking;
     private bool _poisDrawn;
+    private bool _isLoadingPois;
 
     private readonly Dictionary<Pin, Poi> _pinToPoi = new();
     private Pin? _userPin;
@@ -112,8 +113,9 @@ public partial class MapPage : ContentPage, IQueryAttributable
         var sw = System.Diagnostics.Stopwatch.StartNew();
         Debug.WriteLine($"[MAP-TIME] OnAppearingAsync START");
 
-        if (!_poisDrawn)
+        if (!_poisDrawn && !_isLoadingPois)
         {
+            _isLoadingPois = true;
             InitBottomPanel();
 
             Debug.WriteLine($"[MAP-TIME] Starting LoadPoisAsync (background)");
@@ -140,7 +142,12 @@ public partial class MapPage : ContentPage, IQueryAttributable
                         {
                             Debug.WriteLine($"[MAP-ERR] DrawPois after load: {ex}");
                         }
+                        finally
+                        {
+                            _isLoadingPois = false;
+                        }
                     });
+
 
                     if (!string.IsNullOrWhiteSpace(pendingFocus.code))
                     {
@@ -254,6 +261,7 @@ public partial class MapPage : ContentPage, IQueryAttributable
                     firstIteration = false;
                 }
 
+                // THREAD SAFETY: snapshot Pois before processing
                 var location = _vm.CurrentLocation;
                 if (location == null) continue;
 
@@ -266,7 +274,14 @@ public partial class MapPage : ContentPage, IQueryAttributable
 
                 if (_isUserSelecting) continue;
 
-                var nearest = _vm.Pois
+                // Take safe snapshot of Pois for distance calculation
+                List<Poi> snapshot = new();
+                await MainThread.InvokeOnMainThreadAsync(() =>
+                {
+                    snapshot = _vm.Pois.ToList();
+                });
+
+                var nearest = snapshot
                     .Select(p => new
                     {
                         Poi = p,
@@ -478,7 +493,7 @@ public partial class MapPage : ContentPage, IQueryAttributable
         if (poi == null) return;
 
         var route = $"/poidetail?code={Uri.EscapeDataString(poi.Code)}&lang={Uri.EscapeDataString(_vm.CurrentLanguage)}";
-        await Shell.Current.GoToAsync(route);
+        await _navService.NavigateToAsync(route);
     }
 
     private async void OnLanguageButtonClicked(object sender, EventArgs e)

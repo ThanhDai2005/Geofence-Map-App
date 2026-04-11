@@ -1,11 +1,6 @@
-namespace MauiApp1.Services;
+using MauiApp1.Models;
 
-public class QrParseResult
-{
-    public bool Success { get; set; }
-    public string? Code { get; set; }
-    public string? Error { get; set; }
-}
+namespace MauiApp1.Services;
 
 public static class QrResolver
 {

@@ -1,3 +1,4 @@
+using MauiApp1.ApplicationContracts.Services;
 using MauiApp1.Models;
 using MauiApp1.Services;
 using System.ComponentModel;
@@ -19,7 +20,7 @@ namespace MauiApp1.ViewModels;
 public class LanguageSelectorViewModel : INotifyPropertyChanged
 {
     private readonly MapViewModel _mapVm;
-    private readonly LanguagePackService _packService;
+    private readonly ILanguagePackService _packService;
 
     public System.Collections.ObjectModel.ObservableCollection<LanguagePack> Packs
         => _packService.Packs;
@@ -43,7 +44,7 @@ public class LanguageSelectorViewModel : INotifyPropertyChanged
 
     public ICommand SelectLanguageCommand { get; }
 
-    public LanguageSelectorViewModel(MapViewModel mapVm, LanguagePackService packService)
+    public LanguageSelectorViewModel(MapViewModel mapVm, ILanguagePackService packService)
     {
         _mapVm       = mapVm;
         _packService  = packService;
@@ -71,7 +72,7 @@ public class LanguageSelectorViewModel : INotifyPropertyChanged
         try
         {
             // Get the host page for displaying system alerts.
-            var hostPage = Application.Current?.Windows.FirstOrDefault()?.Page
+            var hostPage = Microsoft.Maui.Controls.Application.Current?.Windows.FirstOrDefault()?.Page
                            ?? Shell.Current;
 
             var result = await _packService.EnsureAvailableAsync(pack.Code, hostPage!);
@@ -79,14 +80,14 @@ public class LanguageSelectorViewModel : INotifyPropertyChanged
 
             switch (result)
             {
-                case LanguagePackService.EnsureResult.Available:
+                case LanguagePackEnsureResult.Available:
                     // Apply the language change and close the modal.
                     await _mapVm.ApplyLanguageSelectionAsync(pack.Code);
                     CurrentCode = pack.Code;
                     RequestClose?.Invoke(this, EventArgs.Empty);
                     break;
 
-                case LanguagePackService.EnsureResult.AlreadyDownloading:
+                case LanguagePackEnsureResult.AlreadyDownloading:
                     // Another tap started the download — just inform the user and wait.
                     await hostPage!.DisplayAlert(
                         "Đang tải xuống",
@@ -94,11 +95,11 @@ public class LanguageSelectorViewModel : INotifyPropertyChanged
                         "OK");
                     break;
 
-                case LanguagePackService.EnsureResult.UserCancelled:
+                case LanguagePackEnsureResult.UserCancelled:
                     // User explicitly cancelled → no action needed, stay open.
                     break;
 
-                case LanguagePackService.EnsureResult.Offline:
+                case LanguagePackEnsureResult.Offline:
                     // Alert was already shown by LanguagePackService. Stay open.
                     break;
             }

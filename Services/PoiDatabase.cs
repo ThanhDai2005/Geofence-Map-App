@@ -1,10 +1,11 @@
 using System.Threading;
-using SQLite;
+using MauiApp1.ApplicationContracts.Repositories;
 using MauiApp1.Models;
+using SQLite;
 
 namespace MauiApp1.Services;
 
-public class PoiDatabase
+public class PoiDatabase : IPoiQueryRepository, IPoiCommandRepository, ITranslationRepository
 {
     private readonly SQLiteAsyncConnection _db;
     private bool _inited;
@@ -15,8 +16,9 @@ public class PoiDatabase
         _db = new SQLiteAsyncConnection(path);
     }
 
-    public async Task InitAsync()
+    public async Task InitAsync(CancellationToken cancellationToken = default)
     {
+        cancellationToken.ThrowIfCancellationRequested();
         if (_inited) return;
 
         await _db.CreateTableAsync<Poi>();
@@ -36,34 +38,51 @@ public class PoiDatabase
         _inited = true;
     }
 
-    public Task<int> GetCountAsync()
-        => _db.Table<Poi>().CountAsync();
+    public Task<int> GetCountAsync(CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        return _db.Table<Poi>().CountAsync();
+    }
 
     // Changed: DB now stores exactly 1 core row per POI. No language filtering in SQL.
-    public Task<List<Poi>> GetAllAsync()
-        => _db.Table<Poi>()
+    public Task<List<Poi>> GetAllAsync(CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        return _db.Table<Poi>()
               .OrderByDescending(p => p.Priority)
               .ToListAsync();
+    }
 
-    public async Task<Poi?> GetByIdAsync(string id)
+    public async Task<Poi?> GetByIdAsync(string id, CancellationToken cancellationToken = default)
     {
+        cancellationToken.ThrowIfCancellationRequested();
         return await _db.Table<Poi>()
             .Where(p => p.Id == id)
             .FirstOrDefaultAsync();
     }
 
-    public Task<int> InsertAsync(Poi poi)
-        => _db.InsertAsync(poi);
-
-    public Task<int> UpdateAsync(Poi poi)
-        => _db.UpdateAsync(poi);
-
-    public Task<int> InsertManyAsync(IEnumerable<Poi> pois)
-        => _db.InsertAllAsync(pois);
-
-    public async Task UpsertAsync(Poi poi)
+    public Task<int> InsertAsync(Poi poi, CancellationToken cancellationToken = default)
     {
-        var existing = await GetByIdAsync(poi.Id);
+        cancellationToken.ThrowIfCancellationRequested();
+        return _db.InsertAsync(poi);
+    }
+
+    public Task<int> UpdateAsync(Poi poi, CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        return _db.UpdateAsync(poi);
+    }
+
+    public Task<int> InsertManyAsync(IEnumerable<Poi> pois, CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        return _db.InsertAllAsync(pois);
+    }
+
+    public async Task UpsertAsync(Poi poi, CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        var existing = await GetByIdAsync(poi.Id, cancellationToken).ConfigureAwait(false);
 
         if (existing == null)
         {
@@ -74,22 +93,18 @@ public class PoiDatabase
         await _db.UpdateAsync(poi);
     }
 
-    public async Task UpsertManyAsync(IEnumerable<Poi> pois)
+    public async Task UpsertManyAsync(IEnumerable<Poi> pois, CancellationToken cancellationToken = default)
     {
         foreach (var poi in pois)
         {
-            await UpsertAsync(poi);
+            cancellationToken.ThrowIfCancellationRequested();
+            await UpsertAsync(poi, cancellationToken).ConfigureAwait(false);
         }
     }
 
-    // Translation Service Helpers
-    // Previously these checked LanguageCode in the DB, but since the DB now only stores
-    // one core row per POI (no localization), they both just fetch that core row by Code.
-    // The MapViewModel will attach localization at load time, and the translation service
-    // only needs the core geo data as the "source Poi" anyway.
-
-    public async Task<Poi?> GetByCodeAsync(string code, string? lang = null)
+    public async Task<Poi?> GetByCodeAsync(string code, string? lang = null, CancellationToken cancellationToken = default)
     {
+        cancellationToken.ThrowIfCancellationRequested();
         if (string.IsNullOrWhiteSpace(code)) return null;
         code = code.Trim();
 
@@ -98,18 +113,21 @@ public class PoiDatabase
             .FirstOrDefaultAsync();
     }
 
-    public Task<Poi?> GetAnyLanguageByCodeAsync(string code)
-    {
-        return GetByCodeAsync(code);
-    }
+    public Task<Poi?> GetAnyLanguageByCodeAsync(string code, CancellationToken cancellationToken = default)
+        => GetByCodeAsync(code, null, cancellationToken);
 
-    public Task<Poi?> GetExactByCodeAndLanguageAsync(string code, string languageCode, CancellationToken cancellationToken = default)
-    {
-        return GetByCodeAsync(code);
-    }
+    public Task<Poi?> GetExactByCodeAndLanguageAsync(
+        string code,
+        string languageCode,
+        CancellationToken cancellationToken = default)
+        => GetByCodeAsync(code, null, cancellationToken);
 
-    public Task<PoiTranslationCacheEntry?> GetTranslationCacheAsync(string code, string languageCode, CancellationToken cancellationToken = default)
+    public Task<PoiTranslationCacheEntry?> GetTranslationCacheAsync(
+        string code,
+        string languageCode,
+        CancellationToken cancellationToken = default)
     {
+        cancellationToken.ThrowIfCancellationRequested();
         var key = PoiTranslationCacheEntry.MakeKey(code, languageCode);
         return _db.Table<PoiTranslationCacheEntry>()
             .Where(e => e.Key == key)
@@ -118,6 +136,7 @@ public class PoiDatabase
 
     public async Task UpsertTranslationCacheAsync(PoiTranslationCacheEntry entry, CancellationToken cancellationToken = default)
     {
+        cancellationToken.ThrowIfCancellationRequested();
         var existing = await _db.Table<PoiTranslationCacheEntry>()
             .Where(e => e.Key == entry.Key)
             .FirstOrDefaultAsync();
@@ -126,5 +145,19 @@ public class PoiDatabase
             await _db.InsertAsync(entry);
         else
             await _db.UpdateAsync(entry);
+    }
+
+    public async Task<List<Poi>> GetNearbyAsync(double latitude, double longitude, double radiusInMeters, CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        var all = await GetAllAsync(cancellationToken);
+        
+        var currentLoc = new Microsoft.Maui.Devices.Sensors.Location(latitude, longitude);
+        return all.Where(p => 
+            Microsoft.Maui.Devices.Sensors.Location.CalculateDistance(
+                currentLoc, 
+                new Microsoft.Maui.Devices.Sensors.Location(p.Latitude, p.Longitude), 
+                Microsoft.Maui.Devices.Sensors.DistanceUnits.Kilometers) <= radiusInMeters / 1000.0
+        ).ToList();
     }
 }

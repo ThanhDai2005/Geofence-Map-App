@@ -1,25 +1,32 @@
 using System.Collections.Concurrent;
 using System.Threading;
+using MauiApp1.ApplicationContracts.Repositories;
+using MauiApp1.ApplicationContracts.Services;
 using MauiApp1.Models;
-
-
 using System.Diagnostics;
+
 namespace MauiApp1.Services;
 
 public sealed class PoiTranslationService : IPoiTranslationService
 {
-    private readonly PoiDatabase _db;
+    private readonly IPoiQueryRepository _poiQuery;
+    private readonly ITranslationRepository _translationCache;
     private readonly ITranslationProvider _translator;
-    private readonly LocalizationService _locService;
+    private readonly ILocalizationService _locService;
 
     private static string NormalizeLang(string? lang) =>
         string.IsNullOrWhiteSpace(lang) ? "vi" : lang.Trim().ToLowerInvariant();
 
     private readonly ConcurrentDictionary<string, SemaphoreSlim> _locks = new();
 
-    public PoiTranslationService(PoiDatabase db, ITranslationProvider translator, LocalizationService locService)
+    public PoiTranslationService(
+        IPoiQueryRepository poiQuery,
+        ITranslationRepository translationCache,
+        ITranslationProvider translator,
+        ILocalizationService locService)
     {
-        _db = db;
+        _poiQuery = poiQuery;
+        _translationCache = translationCache;
         _translator = translator;
         _locService = locService;
     }
@@ -32,12 +39,12 @@ public sealed class PoiTranslationService : IPoiTranslationService
 
         code = code.Trim().ToUpperInvariant();
 
-        await _db.InitAsync().ConfigureAwait(false);
+        await _poiQuery.InitAsync(cancellationToken).ConfigureAwait(false);
 
         var targetLang = NormalizeLang(lang);
 
         // 1) Exact row in main POI table (same behavior as "have this language" without touching fallback order here)
-        var direct = await _db.GetExactByCodeAndLanguageAsync(code, targetLang, cancellationToken).ConfigureAwait(false);
+        var direct = await _poiQuery.GetExactByCodeAndLanguageAsync(code, targetLang, cancellationToken).ConfigureAwait(false);
         if (direct != null)
             return direct;
 
@@ -49,13 +56,15 @@ public sealed class PoiTranslationService : IPoiTranslationService
         entered = true;
         try
         {
+            cancellationToken.ThrowIfCancellationRequested();
+
             // 2) Re-check primary table (another thread may have inserted)
-            direct = await _db.GetExactByCodeAndLanguageAsync(code, targetLang, cancellationToken).ConfigureAwait(false);
+            direct = await _poiQuery.GetExactByCodeAndLanguageAsync(code, targetLang, cancellationToken).ConfigureAwait(false);
             if (direct != null)
                 return direct;
 
             // 3) Cache
-            var cached = await _db.GetTranslationCacheAsync(code, targetLang, cancellationToken).ConfigureAwait(false);
+            var cached = await _translationCache.GetTranslationCacheAsync(code, targetLang, cancellationToken).ConfigureAwait(false);
             if (cached != null)
             {
                 Debug.WriteLine($"[TRANSLATE] Cache hit key={cached.Key}");
@@ -117,7 +126,7 @@ public sealed class PoiTranslationService : IPoiTranslationService
             if (allSucceeded)
             {
                 Debug.WriteLine($"[TRANSLATE] All segments succeeded, caching key={key}");
-                await _db.UpsertTranslationCacheAsync(entry, cancellationToken).ConfigureAwait(false);
+                await _translationCache.UpsertTranslationCacheAsync(entry, cancellationToken).ConfigureAwait(false);
             }
             else
             {
@@ -164,7 +173,7 @@ public sealed class PoiTranslationService : IPoiTranslationService
     private async Task<Poi?> GetTranslationSourcePoiAsync(string code, CancellationToken ct)
     {
         // Source base geo data from the database.
-        var core = await _db.GetByCodeAsync(code).ConfigureAwait(false);
+        var core = await _poiQuery.GetByCodeAsync(code, null, ct).ConfigureAwait(false);
         if (core == null) return null;
 
         // Fetch "vi" baseline text directly from the synchronous in-memory lookup.
