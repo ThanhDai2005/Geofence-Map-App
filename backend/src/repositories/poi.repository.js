@@ -92,19 +92,19 @@ class PoiRepository {
         return await Poi.countDocuments({});
     }
 
-    async transitionPendingToApproved(id) {
+    async transitionPendingToApproved(id, options = {}) {
         return await Poi.findOneAndUpdate(
             { _id: id, status: POI_STATUS.PENDING },
             { $set: { status: POI_STATUS.APPROVED, rejectionReason: null } },
-            { new: true, runValidators: true }
+            { new: true, runValidators: true, ...options }
         );
     }
 
-    async transitionPendingToRejected(id, reason) {
+    async transitionPendingToRejected(id, reason, options = {}) {
         return await Poi.findOneAndUpdate(
             { _id: id, status: POI_STATUS.PENDING },
             { $set: { status: POI_STATUS.REJECTED, rejectionReason: reason } },
-            { new: true, runValidators: true }
+            { new: true, runValidators: true, ...options }
         );
     }
 }
