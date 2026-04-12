@@ -1,8 +1,8 @@
 const AdminPoiAudit = require('../models/admin-poi-audit.model');
 
 class AdminPoiAuditRepository {
-    async create(entry) {
-        return await AdminPoiAudit.create(entry);
+    async create(entry, options = {}) {
+        return await AdminPoiAudit.create([entry], options);
     }
 
     async findPaginated({ page, limit }) {

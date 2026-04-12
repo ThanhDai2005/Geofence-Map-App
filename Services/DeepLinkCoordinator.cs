@@ -72,14 +72,23 @@ public sealed class DeepLinkCoordinator
     /// <summary>Optional: Shell finished first layout; helps if intent arrived before Shell was ready.</summary>
     public void OnShellAppeared()
     {
-        if (!_store.HasWarmPendingLink())
+        if (!_store.HasPendingLink())
             return;
 
-        Debug.WriteLine("[DL-DISPATCH] OnShellAppeared: warm pending, scheduling dispatch");
-        OnAppResumed();
+        Debug.WriteLine("[DL-DISPATCH] OnShellAppeared: pending link exists (cold or warm), scheduling dispatch");
+        lock (this)
+        {
+            _dispatchVersion++;
+            _dispatchCts?.Cancel();
+            _dispatchCts?.Dispose();
+            _dispatchCts = new CancellationTokenSource();
+            var token = _dispatchCts.Token;
+            var version = _dispatchVersion;
+            _ = RunWarmDispatchAsync(version, token, consumeAny: true);
+        }
     }
 
-    private async Task RunWarmDispatchAsync(int version, CancellationToken ct)
+    private async Task RunWarmDispatchAsync(int version, CancellationToken ct, bool consumeAny = false)
     {
         var entered = false;
         try
@@ -109,7 +118,7 @@ public sealed class DeepLinkCoordinator
                     continue;
                 }
 
-                var raw = _store.TakePendingLinkIfWarm();
+                var raw = consumeAny ? _store.TakePendingLink() : _store.TakePendingLinkIfWarm();
 
                 if (string.IsNullOrWhiteSpace(raw))
                 {
