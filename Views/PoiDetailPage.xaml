@@ -3,29 +3,144 @@
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     x:Class="MauiApp1.Views.PoiDetailPage"
-    Title="POI Detail"
+    Title="Chi tiết địa danh"
     BackgroundColor="{StaticResource SurfaceBackground}">
 
-    <ScrollView>
-        <VerticalStackLayout Padding="16" Spacing="12">
-            <ActivityIndicator IsRunning="{Binding IsBusy}" IsVisible="{Binding IsBusy}" />
+    <Grid RowDefinitions="*">
+        <!-- BACKGROUND DECORATION -->
+        <BoxView VerticalOptions="Start" HeightRequest="220">
+            <BoxView.Background>
+                <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                    <GradientStop Color="{StaticResource BrandPrimaryDark}" Offset="0.0" />
+                    <GradientStop Color="{StaticResource BrandPrimary}" Offset="0.6" />
+                    <GradientStop Color="{StaticResource SurfaceBackground}" Offset="1.0" />
+                </LinearGradientBrush>
+            </BoxView.Background>
+        </BoxView>
 
-            <Label Text="{Binding Poi.Localization.Name}" FontSize="20" FontAttributes="Bold" />
-            <Label Text="{Binding Poi.Localization.Summary}" FontSize="14" />
-            <Label Text="{Binding Poi.Localization.NarrationShort}" FontSize="14" TextColor="{StaticResource TextSecondary}" />
+        <ScrollView>
+            <VerticalStackLayout Padding="20,40,20,40" Spacing="0">
+                
+                <!-- PROGRESS LOADING -->
+                <ActivityIndicator IsRunning="{Binding IsBusy}" 
+                                   IsVisible="{Binding IsBusy}" 
+                                   Color="White"
+                                   Margin="0,0,0,20"/>
 
-            <Label Text="Auto translated"
-                   FontSize="11"
-                   FontAttributes="Italic"
-                   TextColor="{StaticResource TextSecondary}"
-                   IsVisible="{Binding Poi.IsAutoTranslated}" />
+                <!-- HEADER LABEL -->
+                <Label Text="{Binding Poi.Localization.Name}" 
+                       Style="{StaticResource PageTitleLabel}"
+                       TextColor="White"
+                       HorizontalOptions="Start"
+                       Margin="4,0,0,24" />
 
-            <HorizontalStackLayout Spacing="10">
-                <Button Text="🗺 Open on Map" Clicked="OnOpenOnMapClicked" />
-                <Button Text="🔊 Play" Clicked="OnPlayClicked" />
-                <Button Text="⏹ Stop" Clicked="OnStopClicked" />
-            </HorizontalStackLayout>
+                <!-- MAIN CARD -->
+                <Border Style="{StaticResource CardBorder}" Padding="24">
+                    <VerticalStackLayout Spacing="20">
+                        
+                        <VerticalStackLayout Spacing="8">
+                            <Label Text="Giới thiệu" 
+                                   Style="{StaticResource SectionTitle}" 
+                                   FontSize="18" />
+                            
+                            <Label Text="{Binding Poi.Localization.Summary}" 
+                                   Style="{StaticResource BodyText}" 
+                                   FontSize="16"
+                                   TextColor="{StaticResource TextPrimary}" />
+                        </VerticalStackLayout>
 
-        </VerticalStackLayout>
-    </ScrollView>
+                        <VerticalStackLayout Spacing="8">
+                            <Label Text="Thông tin chi tiết" 
+                                   Style="{StaticResource SectionTitle}" 
+                                   FontSize="14" 
+                                   TextColor="{StaticResource TextSecondary}" />
+                            
+                            <Label Text="{Binding Poi.Localization.NarrationShort}" 
+                                   Style="{StaticResource BodyText}" />
+                        </VerticalStackLayout>
+
+                        <!-- AUTO TRANSLATED BADGE -->
+                        <Border IsVisible="{Binding Poi.IsAutoTranslated}"
+                                BackgroundColor="{StaticResource SurfaceSoft}"
+                                Stroke="{StaticResource BorderLight}"
+                                HorizontalOptions="Start"
+                                Padding="8,4"
+                                StrokeShape="RoundRectangle 8">
+                            <HorizontalStackLayout Spacing="4">
+                                <Label Text="✨" FontSize="12" VerticalOptions="Center" />
+                                <Label Text="Bản dịch tự động"
+                                       FontSize="11"
+                                       FontAttributes="Italic"
+                                       TextColor="{StaticResource TextSecondary}"
+                                       VerticalOptions="Center" />
+                            </HorizontalStackLayout>
+                        </Border>
+
+                        <!-- PREMIUM UPGRADE BANNER (Subtle Ad) -->
+                        <Border IsVisible="{Binding IsNotPremium}"
+                                BackgroundColor="{StaticResource SurfaceSoft}"
+                                StrokeThickness="0"
+                                Padding="16,12"
+                                Margin="0,0,0,8"
+                                StrokeShape="RoundRectangle 12">
+                            <HorizontalStackLayout Spacing="12">
+                                <Label Text="💎" FontSize="20" VerticalOptions="Center" />
+                                <VerticalStackLayout VerticalOptions="Center">
+                                    <Label Text="Mở khóa Premium" 
+                                           TextColor="{StaticResource BrandPrimary}" 
+                                           FontAttributes="Bold" 
+                                           FontSize="14"/>
+                                    <Label Text="Nghe thuyết minh chi tiết và hấp dẫn hơn." 
+                                           TextColor="{StaticResource TextSecondary}" 
+                                           FontSize="12"/>
+                                </VerticalStackLayout>
+                            </HorizontalStackLayout>
+                            <Border.GestureRecognizers>
+                                <TapGestureRecognizer Command="{Binding UpgradeCommand}" />
+                            </Border.GestureRecognizers>
+                        </Border>
+
+                        <BoxView HeightRequest="1" BackgroundColor="{StaticResource BorderLight}" Margin="0,4" />
+
+                        <!-- BUTTON ACTIONS -->
+                        <Grid ColumnDefinitions="*,*" ColumnSpacing="12" RowDefinitions="Auto,Auto,Auto" RowSpacing="12">
+                            
+                            <!-- Standard Play (Free) -->
+                            <Button Text="🔊 Nghe tóm tắt" 
+                                    Style="{StaticResource PrimaryButton}"
+                                    Clicked="OnPlayClicked"
+                                    Grid.Column="0" />
+
+                            <Button Text="⏹ Dừng" 
+                                    Style="{StaticResource SecondaryButton}"
+                                    Clicked="OnStopClicked"
+                                    Grid.Column="1" />
+
+                            <!-- PREMIUM DETAILED BUTTON -->
+                            <Button Text="💎 Nghe chi tiết" 
+                                    Style="{StaticResource PrimaryButton}"
+                                    Clicked="OnPlayDetailedClicked"
+                                    Grid.Row="1"
+                                    Grid.ColumnSpan="2">
+                                <Button.Triggers>
+                                    <DataTrigger TargetType="Button" Binding="{Binding IsNotPremium}" Value="True">
+                                        <Setter Property="Text" Value="🔒 Nghe chi tiết (Premium)" />
+                                        <Setter Property="Opacity" Value="0.9" />
+                                    </DataTrigger>
+                                </Button.Triggers>
+                            </Button>
+
+                            <Button Text="🗺 Xem trên bản đồ" 
+                                    Style="{StaticResource SecondaryButton}"
+                                    Clicked="OnOpenOnMapClicked"
+                                    Grid.Row="2"
+                                    Grid.ColumnSpan="2" />
+                        </Grid>
+
+                    </VerticalStackLayout>
+                </Border>
+
+            </VerticalStackLayout>
+        </ScrollView>
+    </Grid>
 </ContentPage>

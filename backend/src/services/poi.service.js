@@ -1,3 +1,4 @@
+const mongoose = require('mongoose');
 const jwt = require('jsonwebtoken');
 const poiRepository = require('../repositories/poi.repository');
 const adminPoiAuditService = require('./admin-poi-audit.service');
@@ -341,26 +342,37 @@ class PoiService {
             throw new AppError('POI cannot be approved from its current state', 409);
         }
 
-        let updated = await poiRepository.transitionPendingToApproved(rawId);
-        if (!updated) {
-            const latest = await poiRepository.findById(rawId);
-            if (latest && latest.status === POI_STATUS.APPROVED) {
-                return this._mapModerationDto(latest);
-            }
-            throw new AppError('POI could not be approved', 409);
+        const session = await mongoose.startSession();
+        try {
+            let result;
+            await session.withTransaction(async () => {
+                let updated = await poiRepository.transitionPendingToApproved(rawId, { session });
+                if (!updated) {
+                    const latest = await poiRepository.findById(rawId);
+                    if (latest && latest.status === POI_STATUS.APPROVED) {
+                        result = latest;
+                        return;
+                    }
+                    throw new AppError('POI could not be approved', 409);
+                }
+
+                await adminPoiAuditService.recordModeration({
+                    adminId: adminUser._id,
+                    poiId: updated._id,
+                    action: AdminPoiAudit.ACTION.APPROVE,
+                    previousStatus: POI_STATUS.PENDING,
+                    newStatus: POI_STATUS.APPROVED,
+                    reason: null,
+                    session
+                });
+                result = updated;
+            });
+
+            this._invalidateCache();
+            return this._mapModerationDto(result);
+        } finally {
+            session.endSession();
         }
-
-        this._invalidateCache();
-        await adminPoiAuditService.recordModeration({
-            adminId: adminUser._id,
-            poiId: updated._id,
-            action: AdminPoiAudit.ACTION.APPROVE,
-            previousStatus: POI_STATUS.PENDING,
-            newStatus: POI_STATUS.APPROVED,
-            reason: null
-        });
-
-        return this._mapModerationDto(updated);
     }
 
     async rejectPoiById(rawId, body, adminUser) {
@@ -395,26 +407,37 @@ class PoiService {
             throw new AppError('POI cannot be rejected from its current state', 409);
         }
 
-        let updated = await poiRepository.transitionPendingToRejected(rawId, reason);
-        if (!updated) {
-            const latest = await poiRepository.findById(rawId);
-            if (latest && latest.status === POI_STATUS.REJECTED) {
-                return this._mapModerationDto(latest);
-            }
-            throw new AppError('POI could not be rejected', 409);
+        const session = await mongoose.startSession();
+        try {
+            let result;
+            await session.withTransaction(async () => {
+                let updated = await poiRepository.transitionPendingToRejected(rawId, reason, { session });
+                if (!updated) {
+                    const latest = await poiRepository.findById(rawId);
+                    if (latest && latest.status === POI_STATUS.REJECTED) {
+                        result = latest;
+                        return;
+                    }
+                    throw new AppError('POI could not be rejected', 409);
+                }
+
+                await adminPoiAuditService.recordModeration({
+                    adminId: adminUser._id,
+                    poiId: updated._id,
+                    action: AdminPoiAudit.ACTION.REJECT,
+                    previousStatus: POI_STATUS.PENDING,
+                    newStatus: POI_STATUS.REJECTED,
+                    reason,
+                    session
+                });
+                result = updated;
+            });
+
+            this._invalidateCache();
+            return this._mapModerationDto(result);
+        } finally {
+            session.endSession();
         }
-
-        this._invalidateCache();
-        await adminPoiAuditService.recordModeration({
-            adminId: adminUser._id,
-            poiId: updated._id,
-            action: AdminPoiAudit.ACTION.REJECT,
-            previousStatus: POI_STATUS.PENDING,
-            newStatus: POI_STATUS.REJECTED,
-            reason
-        });
-
-        return this._mapModerationDto(updated);
     }
 
     async createOwnerPoi(user, body) {

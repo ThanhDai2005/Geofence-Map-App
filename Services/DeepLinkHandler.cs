@@ -34,25 +34,38 @@ public class DeepLinkHandler
 
         Debug.WriteLine($"[DL-NAV] HandleIncomingLinkAsync raw={rawLink}");
 
-        var parsedPreview = await _qr.ParseAsync(rawLink).ConfigureAwait(false);
-        if (parsedPreview.Success)
-            Debug.WriteLine($"[DL-NAV] Parsed code={parsedPreview.Code}");
-        else
-            Debug.WriteLine($"[DL-NAV] Parse failed: {parsedPreview.Error}");
-
         var request = new PoiEntryRequest
         {
             RawInput = rawLink,
             Source = PoiEntrySource.FutureDeepLink,
-            PreferredLanguage = preferredLanguage
+            PreferredLanguage = preferredLanguage,
+            NavigationMode = PoiNavigationMode.Detail // Standard for external links
         };
 
-        Debug.WriteLine("[DL-NAV] Invoking PoiEntryCoordinator (same path as QR/manual)");
-        var entryResult = await _coordinator.HandleEntryAsync(request);
+        Debug.WriteLine("[DL-NAV] Invoking PoiEntryCoordinator");
+        var entryResult = await _coordinator.HandleEntryAsync(request).ConfigureAwait(false);
+        
         if (entryResult.Success)
+        {
             Debug.WriteLine("[DL-NAV] Resolved POI successfully");
+        }
         else
-            Debug.WriteLine($"[DL-NAV] PoiEntryCoordinator finished without navigation: {entryResult.Error}");
+        {
+            Debug.WriteLine($"[DL-NAV] HandleEntryAsync failed: {entryResult.Error}");
+            
+            // Show notification to user on failure
+            await MainThread.InvokeOnMainThreadAsync(async () =>
+            {
+                if (Microsoft.Maui.Controls.Application.Current?.MainPage != null)
+                {
+                    await Microsoft.Maui.Controls.Application.Current.MainPage.DisplayAlert(
+                        "Lỗi liên kết", 
+                        $"Không thể mở liên kết này: {entryResult.Error}", 
+                        "OK");
+                }
+            });
+        }
+
         return new DeepLinkHandleResult { Success = entryResult.Success, Error = entryResult.Error };
     }
 }

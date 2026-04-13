@@ -7,7 +7,7 @@ class AdminPoiAuditService {
      * Persists a moderation audit row. Required after every successful PENDING → APPROVED/REJECTED transition.
      * Throws if persistence fails (logs are mandatory).
      */
-    async recordModeration({ adminId, poiId, action, previousStatus, newStatus, reason }) {
+    async recordModeration({ adminId, poiId, action, previousStatus, newStatus, reason, session }) {
         if (action !== AdminPoiAudit.ACTION.APPROVE && action !== AdminPoiAudit.ACTION.REJECT) {
             throw new AppError('Invalid audit action', 500);
         }
@@ -19,7 +19,7 @@ class AdminPoiAuditService {
                 previousStatus,
                 newStatus,
                 reason: reason ?? null
-            });
+            }, { session });
         } catch (err) {
             console.error('[AdminPoiAudit] persistence failed', err);
             throw new AppError('Failed to persist audit log', 500);
