@@ -30,6 +30,9 @@ class AuthService {
         if (!user || !(await user.comparePassword(password, user.password))) {
             throw new AppError('Incorrect email or password', 401);
         }
+        if (user.isActive === false) {
+            throw new AppError('Tài khoản của bạn đã bị khóa. Vui lòng liên hệ Admin.', 403);
+        }
 
         const token = this.signToken(user._id);
 
@@ -42,7 +45,8 @@ class AuthService {
                 id: user._id,
                 email: user.email,
                 role: user.role ?? ROLES.USER,
-                isPremium: user.isPremium
+                isPremium: user.isPremium,
+                isActive: user.isActive !== false
             },
             token
         };

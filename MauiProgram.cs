@@ -159,8 +159,6 @@ public static class MauiProgram
         builder.Services.AddTransient<LoginPage>();
         builder.Services.AddSingleton<ViewModels.ProfileViewModel>();
         builder.Services.AddTransient<ProfilePage>();
-        builder.Services.AddTransient<OwnerSubmitViewModel>();
-        builder.Services.AddTransient<OwnerToolsPage>();
         builder.Services.AddTransient<AdminToolsPage>();
 
         builder.Services.AddTransient<MauiApp1.Application.UseCases.GetNearbyPoisUseCase>();

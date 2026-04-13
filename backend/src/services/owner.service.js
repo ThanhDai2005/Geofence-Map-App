@@ -13,6 +13,10 @@ class OwnerService {
     async submitPoi(user, body) {
         return poiService.createOwnerPoi(user, body);
     }
+
+    async listMySubmissions(user, query) {
+        return poiService.listOwnerSubmissions(user, query);
+    }
 }
 
 module.exports = new OwnerService();

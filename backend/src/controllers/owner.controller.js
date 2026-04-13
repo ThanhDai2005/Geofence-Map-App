@@ -17,3 +17,16 @@ exports.submitPoi = async (req, res, next) => {
         next(error);
     }
 };
+
+exports.listMySubmissions = async (req, res, next) => {
+    try {
+        const result = await ownerService.listMySubmissions(req.user, req.query);
+        res.status(200).json({
+            success: true,
+            data: result.items,
+            pagination: result.pagination
+        });
+    } catch (error) {
+        next(error);
+    }
+};

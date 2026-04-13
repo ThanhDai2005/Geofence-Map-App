@@ -466,5 +466,23 @@
     "status": "APPROVED",
     "submittedBy": null,
     "rejectionReason": null
+  },
+  {
+    "code": "MAU_POI_CHO_DUYET",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        106.7001,
+        10.7805
+      ]
+    },
+    "content": {
+      "vi": "POI mẫu chờ duyệt\n\nBản ghi mẫu dùng để kiểm tra luồng duyệt trên trang quản trị.",
+      "en": "Sample pending POI for moderation flow testing."
+    },
+    "isPremiumOnly": false,
+    "status": "PENDING",
+    "submittedBy": null,
+    "rejectionReason": null
   }
 ]

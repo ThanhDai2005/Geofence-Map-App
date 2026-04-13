@@ -8,7 +8,6 @@ public partial class AppShell : Shell
 {
     private readonly DeepLinkCoordinator? _deepLinkCoordinator;
     private readonly AuthService _auth;
-    private ShellContent? _ownerTab;
     private ShellContent? _adminTab;
 
     public AppShell(IServiceProvider services)
@@ -48,15 +47,6 @@ public partial class AppShell : Shell
             ContentTemplate = new DataTemplate(() => services.GetRequiredService<ProfilePage>())
         });
 
-        _ownerTab = new ShellContent
-        {
-            Title = "Gui POI",
-            Route = "ownertools",
-            ContentTemplate = new DataTemplate(() => services.GetRequiredService<OwnerToolsPage>())
-        };
-        _ownerTab.IsVisible = false;
-        tabBar.Items.Add(_ownerTab);
-
         _adminTab = new ShellContent
         {
             Title = "Quan tri",
@@ -88,8 +78,6 @@ public partial class AppShell : Shell
 
     private void UpdateRoleTabs()
     {
-        if (_ownerTab != null)
-            _ownerTab.IsVisible = _auth.IsAuthenticated && _auth.IsOwner;
         if (_adminTab != null)
             _adminTab.IsVisible = _auth.IsAuthenticated && _auth.IsAdmin;
     }

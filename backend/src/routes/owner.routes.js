@@ -9,6 +9,7 @@ router.use(requireAuth);
 router.use(requireRole(ROLES.OWNER));
 
 router.get('/me', ownerController.getMe);
+router.get('/pois', ownerController.listMySubmissions);
 router.post('/pois', ownerController.submitPoi);
 
 module.exports = router;

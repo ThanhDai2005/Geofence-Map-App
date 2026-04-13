@@ -72,6 +72,7 @@ class PoiRepository {
 
     async findPending({ limit, skip }) {
         return await Poi.find({ status: POI_STATUS.PENDING })
+            .populate('submittedBy', 'email role')
             .sort({ createdAt: -1 })
             .skip(skip)
             .limit(limit);
@@ -90,6 +91,17 @@ class PoiRepository {
 
     async countAll() {
         return await Poi.countDocuments({});
+    }
+
+    async findBySubmitter(userId, { limit = 50, skip = 0 } = {}) {
+        return await Poi.find({ submittedBy: userId })
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(limit);
+    }
+
+    async countBySubmitter(userId) {
+        return await Poi.countDocuments({ submittedBy: userId });
     }
 
     async transitionPendingToApproved(id) {

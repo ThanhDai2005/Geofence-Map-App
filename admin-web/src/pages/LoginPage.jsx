@@ -1,14 +1,11 @@
 import { useState } from 'react';
-import { Navigate, useLocation } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from '../AuthContext.jsx';
 import { login } from '../apiClient.js';
 
-const ADMIN = 'ADMIN';
-
 export default function LoginPage() {
-  const { isAuthenticated, loginSuccess } = useAuth();
-  const location = useLocation();
-  const from = location.state?.from || '/';
+  const { isAuthenticated, user, loginSuccess } = useAuth();
+  const navigate = useNavigate();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -16,7 +13,9 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
 
   if (isAuthenticated) {
-    return <Navigate to={from} replace />;
+    if (user?.role === 'ADMIN') return <Navigate to="/dashboard" replace />;
+    if (user?.role === 'OWNER') return <Navigate to="/my-pois" replace />;
+    return <Navigate to="/forbidden" replace />;
   }
 
   async function onSubmit(e) {
@@ -26,14 +25,16 @@ export default function LoginPage() {
     try {
       const res = await login(email, password);
       const payload = res?.data;
-      const role = payload?.user?.role;
-      if (role !== ADMIN) {
-        setError('Access Denied. Only ADMIN accounts can use this dashboard.');
+      const role = payload?.user?.role || 'USER';
+      if (role !== 'ADMIN' && role !== 'OWNER') {
+        setError('Từ chối truy cập. Chỉ tài khoản ADMIN hoặc OWNER mới dùng được cổng này.');
         return;
       }
       loginSuccess(payload.token, payload.user);
+      if (role === 'ADMIN') navigate('/dashboard', { replace: true });
+      else navigate('/my-pois', { replace: true });
     } catch (err) {
-      setError(err.message || 'Login failed');
+      setError(err.message || 'Đăng nhập thất bại');
     } finally {
       setLoading(false);
     }
@@ -42,13 +43,13 @@ export default function LoginPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-b from-slate-950 to-slate-900 px-4">
       <div className="w-full max-w-md rounded-2xl border border-slate-800 bg-slate-900/90 p-8 shadow-xl">
-        <h1 className="text-center text-xl font-semibold text-white">Admin sign in</h1>
-        <p className="mt-1 text-center text-sm text-slate-400">VNGo POI moderation</p>
+        <h1 className="text-center text-xl font-semibold text-white">Đăng nhập quản trị</h1>
+        <p className="mt-1 text-center text-sm text-slate-400">Hệ thống kiểm duyệt POI VNGo</p>
 
         <form onSubmit={onSubmit} className="mt-8 space-y-4">
           <div>
             <label className="mb-1 block text-sm text-slate-400" htmlFor="email">
-              Email
+              Email đăng nhập
             </label>
             <input
               id="email"
@@ -62,7 +63,7 @@ export default function LoginPage() {
           </div>
           <div>
             <label className="mb-1 block text-sm text-slate-400" htmlFor="password">
-              Password
+              Mật khẩu
             </label>
             <input
               id="password"
@@ -86,7 +87,7 @@ export default function LoginPage() {
             disabled={loading}
             className="w-full rounded-lg bg-emerald-600 py-2.5 font-medium text-white hover:bg-emerald-500 disabled:opacity-60"
           >
-            {loading ? 'Signing in...' : 'Sign in'}
+            {loading ? 'Đang đăng nhập...' : 'Đăng nhập'}
           </button>
         </form>
       </div>

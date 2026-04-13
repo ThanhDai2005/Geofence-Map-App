@@ -18,12 +18,12 @@ function statusBadge(status) {
   const s = status || "—";
   const cls =
     s === "APPROVED"
-      ? "bg-emerald-900/50 text-emerald-300"
+      ? "bg-emerald-100 text-emerald-800"
       : s === "PENDING"
-        ? "bg-amber-900/50 text-amber-200"
+        ? "bg-amber-100 text-amber-800"
         : s === "REJECTED"
-          ? "bg-red-900/50 text-red-200"
-          : "bg-slate-800 text-slate-300";
+          ? "bg-red-100 text-red-800"
+          : "bg-slate-100 text-slate-700";
   return (
     <span
       className={`rounded px-2 py-0.5 text-xs font-medium ${cls}`}
@@ -40,7 +40,6 @@ function emptyForm() {
     en: "",
     lat: "",
     lng: "",
-    isPremiumOnly: false,
   };
 }
 
@@ -75,7 +74,7 @@ export default function MasterPoisPage() {
       setRows(list);
       if (res?.pagination) setPagination((p) => ({ ...p, ...res.pagination }));
     } catch (e) {
-      const msg = e.message || "Could not load POIs";
+      const msg = e.message || "Không thể tải danh sách POI";
       const hint404 =
         msg.includes("404") || msg.includes("not found")
           ? " — Neu endpoint la /api/v1/admin/pois/master: dung lai backend (npm run dev trong thu muc backend) bang code moi nhat; route GET /master phai co trong admin-poi.routes.js."
@@ -104,7 +103,6 @@ export default function MasterPoisPage() {
       en: contentCell(row.content, "en") === "—" ? "" : row.content?.en || "",
       lat: loc.lat != null ? String(loc.lat) : "",
       lng: loc.lng != null ? String(loc.lng) : "",
-      isPremiumOnly: Boolean(row.isPremiumOnly),
     });
     setEditRow(row);
   }
@@ -115,17 +113,17 @@ export default function MasterPoisPage() {
     const lat = Number(form.lat);
     const lng = Number(form.lng);
     if (!code) {
-      setErr("Code is required");
+      setErr("Mã địa điểm là bắt buộc");
       return;
     }
     if (Number.isNaN(lat) || Number.isNaN(lng)) {
-      setErr("Latitude and longitude must be valid numbers");
+      setErr("Vĩ độ và kinh độ phải là số hợp lệ");
       return;
     }
     const vi = form.vi.trim();
     const en = form.en.trim();
     if (!en && !vi) {
-      setErr("Provide at least one of English or Vietnamese text");
+      setErr("Cần nhập ít nhất một nội dung tiếng Anh hoặc tiếng Việt");
       return;
     }
     setErr("");
@@ -138,12 +136,11 @@ export default function MasterPoisPage() {
         code,
         location: { lat, lng },
         content,
-        isPremiumOnly: form.isPremiumOnly,
       });
       setCreateOpen(false);
       await load(pagination.page);
     } catch (e) {
-      setErr(e.message || "Create failed");
+      setErr(e.message || "Tạo POI thất bại");
     } finally {
       setBusyCode(null);
     }
@@ -155,13 +152,13 @@ export default function MasterPoisPage() {
     const lat = Number(form.lat);
     const lng = Number(form.lng);
     if (Number.isNaN(lat) || Number.isNaN(lng)) {
-      setErr("Latitude and longitude must be valid numbers");
+      setErr("Vĩ độ và kinh độ phải là số hợp lệ");
       return;
     }
     const vi = form.vi.trim();
     const en = form.en.trim();
     if (!en && !vi) {
-      setErr("Provide at least one of English or Vietnamese text");
+      setErr("Cần nhập ít nhất một nội dung tiếng Anh hoặc tiếng Việt");
       return;
     }
     setErr("");
@@ -173,12 +170,11 @@ export default function MasterPoisPage() {
       await updatePoiByCode(editRow.code, {
         location: { lat, lng },
         content,
-        isPremiumOnly: form.isPremiumOnly,
       });
       setEditRow(null);
       await load(pagination.page);
     } catch (e) {
-      setErr(e.message || "Update failed");
+      setErr(e.message || "Cập nhật POI thất bại");
     } finally {
       setBusyCode(null);
     }
@@ -186,7 +182,7 @@ export default function MasterPoisPage() {
 
   async function openQrModal(row) {
     if (!row?.id) {
-      setErr("POI id missing — cannot mint QR token.");
+      setErr("Thiếu id POI — không thể tạo QR token.");
       return;
     }
     setQrModalRow(row);
@@ -197,11 +193,11 @@ export default function MasterPoisPage() {
       const res = await fetchPoiQrToken(row.id);
       const url = res?.data?.scanUrl;
       if (!url || typeof url !== "string") {
-        throw new Error("Invalid response from qr-token endpoint");
+        throw new Error("Phản hồi từ endpoint qr-token không hợp lệ");
       }
       setQrModalUrl(url);
     } catch (e) {
-      setQrModalErr(e.message || "Could not load QR token");
+      setQrModalErr(e.message || "Không thể tải QR token");
     } finally {
       setQrModalLoading(false);
     }
@@ -216,7 +212,7 @@ export default function MasterPoisPage() {
       setDeleteRow(null);
       await load(pagination.page);
     } catch (e) {
-      setErr(e.message || "Delete failed");
+      setErr(e.message || "Xóa POI thất bại");
     } finally {
       setBusyCode(null);
     }
@@ -229,27 +225,27 @@ export default function MasterPoisPage() {
     <div>
       <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold text-white">Manage POIs</h1>
-          <p className="text-sm text-slate-400">
-            Full list (all statuses). Create / edit / delete via{" "}
-            <code className="text-slate-500">/api/v1/pois</code>. Does not
-            replace moderation workflow for owner submissions.
+          <h1 className="text-2xl font-semibold text-slate-900">Quản lý POI</h1>
+          <p className="text-sm text-slate-600">
+            Danh sách đầy đủ (mọi trạng thái). Tạo / sửa / xóa qua{" "}
+            <code className="text-slate-500">/api/v1/pois</code>. Không
+            thay thế luồng kiểm duyệt gửi địa điểm từ Owner.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
           <button
             type="button"
             onClick={() => load(page)}
-            className="rounded-lg border border-slate-600 px-4 py-2 text-sm text-slate-200 hover:bg-slate-800"
+            className="rounded-lg border border-slate-300 px-4 py-2 text-sm text-slate-800 hover:bg-slate-50"
           >
-            Refresh
+            Làm mới
           </button>
           <button
             type="button"
             onClick={openCreate}
             className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-500"
           >
-            Add POI
+            Thêm POI
           </button>
         </div>
       </div>
@@ -261,51 +257,50 @@ export default function MasterPoisPage() {
       )}
 
       {totalPages > 1 && (
-        <div className="mb-4 flex items-center gap-3 text-sm text-slate-400">
+        <div className="mb-4 flex items-center gap-3 text-sm text-slate-600">
           <button
             type="button"
             disabled={page <= 1 || loading}
             onClick={() => load(page - 1)}
-            className="rounded border border-slate-600 px-3 py-1 hover:bg-slate-800 disabled:opacity-40"
+            className="rounded border border-slate-300 px-3 py-1 hover:bg-slate-50 disabled:opacity-40"
           >
-            Previous
+            Trước
           </button>
           <span>
-            Page {page} / {totalPages || 1} ({pagination.total ?? 0} total)
+            Trang {page} / {totalPages || 1} ({pagination.total ?? 0} bản ghi)
           </span>
           <button
             type="button"
             disabled={page >= totalPages || loading}
             onClick={() => load(page + 1)}
-            className="rounded border border-slate-600 px-3 py-1 hover:bg-slate-800 disabled:opacity-40"
+            className="rounded border border-slate-300 px-3 py-1 hover:bg-slate-50 disabled:opacity-40"
           >
-            Next
+            Sau
           </button>
         </div>
       )}
 
       {loading ? (
-        <p className="text-slate-400">Loading...</p>
+        <p className="text-slate-600">Đang tải...</p>
       ) : rows.length === 0 ? (
-        <p className="rounded-lg border border-slate-800 bg-slate-900/50 px-4 py-8 text-center text-slate-400">
-          No POIs in database.
+        <p className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-8 text-center text-slate-600">
+          Chưa có POI trong cơ sở dữ liệu.
         </p>
       ) : (
-        <div className="overflow-x-auto rounded-xl border border-slate-800">
-          <table className="min-w-full divide-y divide-slate-800 text-left text-sm">
-            <thead className="bg-slate-900/80 text-slate-400">
+        <div className="overflow-hidden rounded-lg bg-white shadow">
+          <table className="min-w-full text-left text-sm">
+            <thead>
               <tr>
-                <th className="px-4 py-3 font-medium">Code</th>
-                <th className="px-4 py-3 font-medium">Status</th>
-                <th className="px-4 py-3 font-medium">VI</th>
-                <th className="px-4 py-3 font-medium">EN</th>
-                <th className="px-4 py-3 font-medium">Location</th>
-                <th className="px-4 py-3 font-medium">Premium</th>
-                <th className="px-4 py-3 font-medium">QR</th>
-                <th className="px-4 py-3 font-medium text-right">Actions</th>
+                <th className="bg-gray-800 px-4 py-3 text-left font-bold text-white">Mã</th>
+                <th className="bg-gray-800 px-4 py-3 text-left font-bold text-white">Trạng thái</th>
+                <th className="bg-gray-800 px-4 py-3 text-left font-bold text-white">VI</th>
+                <th className="bg-gray-800 px-4 py-3 text-left font-bold text-white">EN</th>
+                <th className="bg-gray-800 px-4 py-3 text-left font-bold text-white">Tọa độ</th>
+                <th className="bg-gray-800 px-4 py-3 text-left font-bold text-white">QR</th>
+                <th className="bg-gray-800 px-4 py-3 text-right font-bold text-white">Hành động</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800 bg-slate-950/40">
+            <tbody>
               {rows.map((row) => {
                 const loc = row.location;
                 const lat = loc != null ? Number(loc.lat) : NaN;
@@ -316,40 +311,37 @@ export default function MasterPoisPage() {
                     : "—";
                 const busy = busyCode === row.code;
                 return (
-                  <tr key={String(row.id || row.code)} className="hover:bg-slate-900/50">
-                    <td className="px-4 py-3 font-mono text-emerald-300">
+                  <tr key={String(row.id || row.code)} className="odd:bg-gray-50 even:bg-white">
+                    <td className="border-b border-gray-200 px-4 py-3 font-mono text-gray-900">
                       {row.code}
                     </td>
-                    <td className="px-4 py-3">{statusBadge(row.status)}</td>
-                    <td className="max-w-[140px] truncate px-4 py-3 text-slate-300">
+                    <td className="border-b border-gray-200 px-4 py-3">{statusBadge(row.status)}</td>
+                    <td className="max-w-[140px] truncate border-b border-gray-200 px-4 py-3 text-gray-900">
                       {contentCell(row.content, "vi")}
                     </td>
-                    <td className="max-w-[140px] truncate px-4 py-3 text-slate-300">
+                    <td className="max-w-[140px] truncate border-b border-gray-200 px-4 py-3 text-gray-900">
                       {contentCell(row.content, "en")}
                     </td>
-                    <td className="px-4 py-3 text-slate-400">{locStr}</td>
-                    <td className="px-4 py-3 text-slate-400">
-                      {row.isPremiumOnly ? "Yes" : "No"}
-                    </td>
-                    <td className="px-4 py-3">
+                    <td className="border-b border-gray-200 px-4 py-3 text-gray-900">{locStr}</td>
+                    <td className="border-b border-gray-200 px-4 py-3">
                       <button
                         type="button"
                         disabled={busy}
                         onClick={() => openQrModal(row)}
-                        className="rounded-lg border border-slate-600 px-3 py-1.5 text-xs text-slate-200 hover:bg-slate-800 disabled:opacity-50"
+                        className="rounded-lg border border-gray-300 px-3 py-1.5 text-xs text-gray-900 hover:bg-gray-100 disabled:opacity-50"
                       >
-                        View QR
+                        Xem QR
                       </button>
                     </td>
-                    <td className="px-4 py-3 text-right">
+                    <td className="border-b border-gray-200 px-4 py-3 text-right">
                       <div className="flex flex-wrap justify-end gap-2">
                         <button
                           type="button"
                           disabled={busy}
                           onClick={() => openEdit(row)}
-                          className="rounded-lg border border-slate-600 px-3 py-1.5 text-xs text-slate-200 hover:bg-slate-800 disabled:opacity-50"
+                          className="rounded-lg border border-gray-300 px-3 py-1.5 text-xs text-gray-900 hover:bg-gray-100 disabled:opacity-50"
                         >
-                          Edit
+                          Sửa
                         </button>
                         <button
                           type="button"
@@ -357,7 +349,7 @@ export default function MasterPoisPage() {
                           onClick={() => setDeleteRow(row)}
                           className="rounded-lg bg-red-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-red-500 disabled:opacity-50"
                         >
-                          Delete
+                          Xóa
                         </button>
                       </div>
                     </td>
@@ -373,66 +365,56 @@ export default function MasterPoisPage() {
       {createOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
           <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-xl border border-slate-700 bg-slate-900 p-6 shadow-2xl">
-            <h2 className="text-lg font-semibold text-white">Add POI</h2>
+            <h2 className="text-lg font-semibold text-white">Thêm POI</h2>
             <p className="mt-1 text-sm text-slate-400">
-              Creates as <strong className="text-emerald-400">APPROVED</strong>{" "}
-              (admin path).
+              Tạo mới với trạng thái <strong className="text-emerald-400">APPROVED</strong>{" "}
+              (luồng quản trị viên).
             </p>
             <form onSubmit={submitCreate} className="mt-4 space-y-3">
               <Field
-                label="Code"
+                label="Mã"
                 value={form.code}
                 onChange={(v) => setForm((f) => ({ ...f, code: v }))}
                 required
               />
               <div className="grid grid-cols-2 gap-3">
                 <Field
-                  label="Latitude"
+                  label="Vĩ độ"
                   value={form.lat}
                   onChange={(v) => setForm((f) => ({ ...f, lat: v }))}
                   required
                 />
                 <Field
-                  label="Longitude"
+                  label="Kinh độ"
                   value={form.lng}
                   onChange={(v) => setForm((f) => ({ ...f, lng: v }))}
                   required
                 />
               </div>
               <Field
-                label="Content (EN)"
+                label="Nội dung (EN)"
                 value={form.en}
                 onChange={(v) => setForm((f) => ({ ...f, en: v }))}
               />
               <Field
-                label="Content (VI)"
+                label="Nội dung (VI)"
                 value={form.vi}
                 onChange={(v) => setForm((f) => ({ ...f, vi: v }))}
               />
-              <label className="flex items-center gap-2 text-sm text-slate-300">
-                <input
-                  type="checkbox"
-                  checked={form.isPremiumOnly}
-                  onChange={(e) =>
-                    setForm((f) => ({ ...f, isPremiumOnly: e.target.checked }))
-                  }
-                />
-                Premium only
-              </label>
               <div className="flex justify-end gap-2 pt-2">
                 <button
                   type="button"
                   onClick={() => setCreateOpen(false)}
                   className="rounded-lg border border-slate-600 px-4 py-2 text-sm text-slate-200 hover:bg-slate-800"
                 >
-                  Cancel
+                  Hủy
                 </button>
                 <button
                   type="submit"
                   disabled={busyCode === "__create__"}
                   className="rounded-lg bg-emerald-600 px-4 py-2 text-sm text-white hover:bg-emerald-500 disabled:opacity-50"
                 >
-                  {busyCode === "__create__" ? "..." : "Create"}
+                  {busyCode === "__create__" ? "..." : "Tạo mới"}
                 </button>
               </div>
             </form>
@@ -444,59 +426,49 @@ export default function MasterPoisPage() {
       {editRow && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
           <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-xl border border-slate-700 bg-slate-900 p-6 shadow-2xl">
-            <h2 className="text-lg font-semibold text-white">Edit POI</h2>
+            <h2 className="text-lg font-semibold text-white">Sửa POI</h2>
             <p className="mt-1 font-mono text-sm text-emerald-300">
               {editRow.code}
             </p>
             <form onSubmit={submitEdit} className="mt-4 space-y-3">
               <div className="grid grid-cols-2 gap-3">
                 <Field
-                  label="Latitude"
+                  label="Vĩ độ"
                   value={form.lat}
                   onChange={(v) => setForm((f) => ({ ...f, lat: v }))}
                   required
                 />
                 <Field
-                  label="Longitude"
+                  label="Kinh độ"
                   value={form.lng}
                   onChange={(v) => setForm((f) => ({ ...f, lng: v }))}
                   required
                 />
               </div>
               <Field
-                label="Content (EN)"
+                label="Nội dung (EN)"
                 value={form.en}
                 onChange={(v) => setForm((f) => ({ ...f, en: v }))}
               />
               <Field
-                label="Content (VI)"
+                label="Nội dung (VI)"
                 value={form.vi}
                 onChange={(v) => setForm((f) => ({ ...f, vi: v }))}
               />
-              <label className="flex items-center gap-2 text-sm text-slate-300">
-                <input
-                  type="checkbox"
-                  checked={form.isPremiumOnly}
-                  onChange={(e) =>
-                    setForm((f) => ({ ...f, isPremiumOnly: e.target.checked }))
-                  }
-                />
-                Premium only
-              </label>
               <div className="flex justify-end gap-2 pt-2">
                 <button
                   type="button"
                   onClick={() => setEditRow(null)}
                   className="rounded-lg border border-slate-600 px-4 py-2 text-sm text-slate-200 hover:bg-slate-800"
                 >
-                  Cancel
+                  Hủy
                 </button>
                 <button
                   type="submit"
                   disabled={busyCode === editRow.code}
                   className="rounded-lg bg-emerald-600 px-4 py-2 text-sm text-white hover:bg-emerald-500 disabled:opacity-50"
                 >
-                  {busyCode === editRow.code ? "..." : "Save"}
+                  {busyCode === editRow.code ? "..." : "Lưu"}
                 </button>
               </div>
             </form>
@@ -511,7 +483,7 @@ export default function MasterPoisPage() {
             <h2 className="text-lg font-semibold text-white">QR quét (bảo mật)</h2>
             <p className="mt-1 font-mono text-sm text-emerald-300">{qrModalRow.code}</p>
             <p className="mt-2 text-xs text-slate-400">
-              Mã thay đổi theo thời hạn token. Ứng dụng quét sẽ gửi token lên server để lấy POI.
+              Mã QR là token ký số vĩnh viễn (không hết hạn). Ứng dụng quét sẽ gửi token lên server để xác thực chữ ký.
             </p>
             {qrModalErr && (
               <p className="mt-3 text-sm text-red-300">{qrModalErr}</p>
@@ -548,13 +520,13 @@ export default function MasterPoisPage() {
       {deleteRow && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
           <div className="w-full max-w-md rounded-xl border border-slate-700 bg-slate-900 p-6 shadow-2xl">
-            <h2 className="text-lg font-semibold text-white">Delete POI?</h2>
+            <h2 className="text-lg font-semibold text-white">Xóa POI?</h2>
             <p className="mt-2 text-sm text-slate-400">
-              Permanently remove{" "}
+              Xóa vĩnh viễn{" "}
               <span className="font-mono text-emerald-300">
                 {deleteRow.code}
               </span>
-              . This cannot be undone.
+              . Hành động này không thể hoàn tác.
             </p>
             <div className="mt-6 flex justify-end gap-2">
               <button
@@ -562,7 +534,7 @@ export default function MasterPoisPage() {
                 onClick={() => setDeleteRow(null)}
                 className="rounded-lg border border-slate-600 px-4 py-2 text-sm text-slate-200 hover:bg-slate-800"
               >
-                Cancel
+                Hủy
               </button>
               <button
                 type="button"
@@ -570,7 +542,7 @@ export default function MasterPoisPage() {
                 disabled={busyCode === deleteRow.code}
                 className="rounded-lg bg-red-600 px-4 py-2 text-sm text-white hover:bg-red-500 disabled:opacity-50"
               >
-                {busyCode === deleteRow.code ? "..." : "Delete"}
+                {busyCode === deleteRow.code ? "..." : "Xóa"}
               </button>
             </div>
           </div>

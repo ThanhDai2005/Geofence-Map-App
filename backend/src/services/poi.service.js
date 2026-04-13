@@ -444,8 +444,27 @@ class PoiService {
         return this._mapOwnerSubmittedPoi(poi);
     }
 
+    async listOwnerSubmissions(user, query = {}) {
+        const page = Math.max(parseInt(query.page, 10) || 1, 1);
+        const limit = Math.min(Math.max(parseInt(query.limit, 10) || 50, 1), 100);
+        const skip = (page - 1) * limit;
+
+        const [pois, total] = await Promise.all([
+            poiRepository.findBySubmitter(user._id, { limit, skip }),
+            poiRepository.countBySubmitter(user._id)
+        ]);
+
+        const totalPages = Math.ceil(total / limit) || 0;
+
+        return {
+            items: pois.map((p) => this._mapModerationDto(p)),
+            pagination: { page, limit, total, totalPages }
+        };
+    }
+
     /**
-     * ADMIN: mint short-lived JWT for QR; QR encodes scan URL with `?t=`.
+     * ADMIN: mint permanent signed JWT for printed QR (`type: static_secure_qr`).
+     * No exp — physical QR stays valid; tampering fails signature verify.
      */
     async generateQrScanTokenForAdmin(rawPoiId) {
         if (!rawPoiId || typeof rawPoiId !== 'string') {
@@ -458,17 +477,13 @@ class PoiService {
         if (!doc) {
             throw new AppError('POI not found', 404);
         }
+        const code = String(doc.code || '').trim();
         const token = jwt.sign(
-            {
-                poiId: String(doc._id),
-                code: doc.code,
-                type: 'qr_scan'
-            },
-            config.jwtSecret,
-            { expiresIn: config.qrScanTokenExpiresIn }
+            { code, type: 'static_secure_qr' },
+            config.jwtSecret
         );
         const scanUrl = `${config.scanQrUrlBase}?t=${encodeURIComponent(token)}`;
-        return { token, scanUrl, expiresIn: config.qrScanTokenExpiresIn };
+        return { token, scanUrl, permanent: true };
     }
 
     /**
@@ -484,10 +499,17 @@ class PoiService {
         } catch (e) {
             throw new AppError('Invalid or expired QR token', 401);
         }
-        if (decoded.type !== 'qr_scan' || !decoded.poiId) {
+
+        let poi = null;
+        if (decoded.type === 'static_secure_qr' && decoded.code) {
+            const code = String(decoded.code).trim().toUpperCase();
+            poi = await poiRepository.findByCode(code);
+        } else if (decoded.type === 'qr_scan' && decoded.poiId) {
+            poi = await poiRepository.findById(decoded.poiId);
+        } else {
             throw new AppError('Invalid QR token payload', 400);
         }
-        const poi = await poiRepository.findById(decoded.poiId);
+
         if (!poi) {
             throw new AppError('POI not found', 404);
         }

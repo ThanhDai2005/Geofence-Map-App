@@ -3,18 +3,21 @@
     "email": "user@vngo.com",
     "password": "$2b$12$cFnC5fVwHwjVwdcrHZP8Tes4oUWxED65b2fm34a3WdQFCcwvDcObO",
     "role": "USER",
-    "isPremium": false
+    "isPremium": false,
+    "isActive": true
   },
   {
     "email": "admin@vngo.com",
     "password": "$2b$12$cFnC5fVwHwjVwdcrHZP8Tes4oUWxED65b2fm34a3WdQFCcwvDcObO",
     "role": "ADMIN",
-    "isPremium": false
+    "isPremium": false,
+    "isActive": true
   },
   {
     "email": "owner@vngo.com",
     "password": "$2b$12$cFnC5fVwHwjVwdcrHZP8Tes4oUWxED65b2fm34a3WdQFCcwvDcObO",
     "role": "OWNER",
-    "isPremium": false
+    "isPremium": false,
+    "isActive": true
   }
 ]

@@ -111,3 +111,44 @@ export async function fetchPoiQrToken(poiId) {
     `/api/v1/admin/pois/${encodeURIComponent(poiId)}/qr-token`,
   );
 }
+
+export async function fetchAdminUsers() {
+  return apiRequest('/api/v1/admin/users');
+}
+
+export async function createAdminUser(body) {
+  return apiRequest('/api/v1/admin/users', {
+    method: 'POST',
+    body,
+  });
+}
+
+export async function updateUserRole(userId, role) {
+  return apiRequest(`/api/v1/admin/users/${encodeURIComponent(userId)}/role`, {
+    method: 'PUT',
+    body: { role },
+  });
+}
+
+export async function updateUserPremium(userId, isPremium) {
+  return apiRequest(`/api/v1/admin/users/${encodeURIComponent(userId)}/premium`, {
+    method: 'PUT',
+    body: { isPremium },
+  });
+}
+
+export async function updateUserStatus(userId, isActive) {
+  return apiRequest(`/api/v1/admin/users/${encodeURIComponent(userId)}/status`, {
+    method: 'PUT',
+    body: { isActive },
+  });
+}
+
+export async function fetchOwnerSubmissions(page = 1, limit = 50) {
+  const q = new URLSearchParams({ page: String(page), limit: String(limit) });
+  return apiRequest(`/api/v1/owner/pois?${q}`);
+}
+
+export async function submitOwnerPoi(body) {
+  return apiRequest('/api/v1/owner/pois', { method: 'POST', body });
+}

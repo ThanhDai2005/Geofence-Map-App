@@ -7,7 +7,8 @@ const userSchema = new mongoose.Schema({
     email: { type: String, required: true, unique: true, lowercase: true },
     password: { type: String, required: true, select: false },
     role: { type: String, enum: Object.values(ROLES), default: ROLES.USER },
-    isPremium: { type: Boolean, default: false }
+    isPremium: { type: Boolean, default: false },
+    isActive: { type: Boolean, default: true }
 }, {
     timestamps: true
 });

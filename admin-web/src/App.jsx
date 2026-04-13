@@ -1,52 +1,45 @@
-import { Navigate, Route, Routes, Link, useLocation } from 'react-router-dom';
+import { Navigate, Route, Routes } from 'react-router-dom';
 import { useAuth } from './AuthContext.jsx';
 import LoginPage from './pages/LoginPage.jsx';
+import AdminHomePage from './pages/AdminHomePage.jsx';
 import DashboardPage from './pages/DashboardPage.jsx';
 import AuditsPage from './pages/AuditsPage.jsx';
 import MasterPoisPage from './pages/MasterPoisPage.jsx';
+import UserManagementPage from './pages/UserManagementPage.jsx';
+import OwnerSubmissionsPage from './pages/OwnerSubmissionsPage.jsx';
+import SubmitPoiPage from './pages/SubmitPoiPage.jsx';
+import DashboardLayout from './components/DashboardLayout.jsx';
 
 function Protected({ children }) {
   const { isAuthenticated } = useAuth();
-  const loc = useLocation();
   if (!isAuthenticated) {
-    return <Navigate to="/login" replace state={{ from: loc.pathname }} />;
+    return <Navigate to="/login" replace />;
   }
   return children;
 }
 
-function Layout({ children }) {
-  const { logout, user } = useAuth();
+function RequireRole({ allowedRoles, children }) {
+  const { user } = useAuth();
+  if (!allowedRoles.includes(user?.role)) {
+    return <Navigate to="/forbidden" replace />;
+  }
+  return children;
+}
+
+function RoleHomeRedirect() {
+  const { user } = useAuth();
+  if (user?.role === 'ADMIN') return <Navigate to="/dashboard" replace />;
+  if (user?.role === 'OWNER') return <Navigate to="/my-pois" replace />;
+  return <Navigate to="/forbidden" replace />;
+}
+
+function ForbiddenPage() {
   return (
-    <div className="min-h-screen">
-      <header className="border-b border-slate-800 bg-slate-900/80 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-4 py-3">
-          <div className="flex items-center gap-6">
-            <span className="font-semibold tracking-tight text-emerald-400">VNGo Admin</span>
-            <nav className="flex gap-4 text-sm">
-              <Link className="text-slate-300 hover:text-white" to="/">
-                Pending POIs
-              </Link>
-              <Link className="text-slate-300 hover:text-white" to="/audits">
-                Audit log
-              </Link>
-              <Link className="text-slate-300 hover:text-white" to="/pois">
-                Manage POIs
-              </Link>
-            </nav>
-          </div>
-          <div className="flex items-center gap-3 text-sm text-slate-400">
-            {user?.email && <span>{user.email}</span>}
-            <button
-              type="button"
-              onClick={logout}
-              className="rounded-lg border border-slate-600 px-3 py-1 text-slate-200 hover:bg-slate-800"
-            >
-              Sign out
-            </button>
-          </div>
-        </div>
-      </header>
-      <main className="mx-auto max-w-6xl px-4 py-8">{children}</main>
+    <div className="flex min-h-screen items-center justify-center bg-slate-100 px-4">
+      <div className="max-w-md rounded-xl border border-slate-200 bg-white p-6 text-center shadow-sm">
+        <h1 className="text-lg font-semibold text-slate-900">Không có quyền truy cập</h1>
+        <p className="mt-2 text-sm text-slate-600">Vai trò tài khoản hiện tại không thể truy cập trang này.</p>
+      </div>
     </div>
   );
 }
@@ -59,32 +52,69 @@ export default function App() {
         path="/"
         element={
           <Protected>
-            <Layout>
+            <DashboardLayout />
+          </Protected>
+        }
+      >
+        <Route index element={<RoleHomeRedirect />} />
+        <Route
+          path="dashboard"
+          element={
+            <RequireRole allowedRoles={['ADMIN']}>
+              <AdminHomePage />
+            </RequireRole>
+          }
+        />
+        <Route
+          path="pending"
+          element={
+            <RequireRole allowedRoles={['ADMIN']}>
               <DashboardPage />
-            </Layout>
-          </Protected>
-        }
-      />
-      <Route
-        path="/audits"
-        element={
-          <Protected>
-            <Layout>
-              <AuditsPage />
-            </Layout>
-          </Protected>
-        }
-      />
-      <Route
-        path="/pois"
-        element={
-          <Protected>
-            <Layout>
+            </RequireRole>
+          }
+        />
+        <Route
+          path="pois"
+          element={
+            <RequireRole allowedRoles={['ADMIN']}>
               <MasterPoisPage />
-            </Layout>
-          </Protected>
-        }
-      />
+            </RequireRole>
+          }
+        />
+        <Route
+          path="audits"
+          element={
+            <RequireRole allowedRoles={['ADMIN']}>
+              <AuditsPage />
+            </RequireRole>
+          }
+        />
+        <Route
+          path="users"
+          element={
+            <RequireRole allowedRoles={['ADMIN']}>
+              <UserManagementPage />
+            </RequireRole>
+          }
+        />
+        <Route
+          path="my-pois"
+          element={
+            <RequireRole allowedRoles={['OWNER']}>
+              <OwnerSubmissionsPage />
+            </RequireRole>
+          }
+        />
+        <Route
+          path="submit-poi"
+          element={
+            <RequireRole allowedRoles={['OWNER']}>
+              <SubmitPoiPage />
+            </RequireRole>
+          }
+        />
+      </Route>
+      <Route path="/forbidden" element={<ForbiddenPage />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );

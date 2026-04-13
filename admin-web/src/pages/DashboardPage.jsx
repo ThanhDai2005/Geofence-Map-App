@@ -32,10 +32,10 @@ function RejectModal({ open, onClose, onConfirm, poiCode }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
       <div className="w-full max-w-md rounded-xl border border-slate-700 bg-slate-900 p-6 shadow-2xl">
-        <h2 className="text-lg font-semibold text-white">Reject POI</h2>
+        <h2 className="text-lg font-semibold text-white">Từ chối địa điểm</h2>
         <p className="mt-1 text-sm text-slate-400">
-          {poiCode ? `Code: ${poiCode}. ` : ""}
-          Rejection reason is required.
+          {poiCode ? `Mã: ${poiCode}. ` : ""}
+          Vui lòng nhập lý do từ chối.
         </p>
         <form onSubmit={submit} className="mt-4 space-y-3">
           <textarea
@@ -43,7 +43,7 @@ function RejectModal({ open, onClose, onConfirm, poiCode }) {
             rows={4}
             value={reason}
             onChange={(e) => setReason(e.target.value)}
-            placeholder="Reason for rejection..."
+            placeholder="Lý do từ chối..."
             className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white outline-none focus:ring-2 focus:ring-red-500/50"
           />
           <div className="flex justify-end gap-2">
@@ -52,14 +52,14 @@ function RejectModal({ open, onClose, onConfirm, poiCode }) {
               onClick={onClose}
               className="rounded-lg border border-slate-600 px-4 py-2 text-sm text-slate-200 hover:bg-slate-800"
             >
-              Cancel
+              Hủy
             </button>
             <button
               type="submit"
               disabled={busy || !reason.trim()}
               className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-500 disabled:opacity-50"
             >
-              {busy ? "..." : "Confirm reject"}
+              {busy ? "..." : "Xác nhận từ chối"}
             </button>
           </div>
         </form>
@@ -83,7 +83,7 @@ export default function DashboardPage() {
       const list = Array.isArray(res?.data) ? res.data : [];
       setRows(list);
     } catch (e) {
-      setErr(e.message || "Could not load pending POIs");
+      setErr(e.message || "Không thể tải danh sách POI chờ duyệt");
       setRows([]);
     } finally {
       setLoading(false);
@@ -101,7 +101,7 @@ export default function DashboardPage() {
       await approvePoi(id);
       await load();
     } catch (e) {
-      setErr(e.message || "Approve failed");
+      setErr(e.message || "Duyệt thất bại");
     } finally {
       setActionId(null);
     }
@@ -115,7 +115,7 @@ export default function DashboardPage() {
       await rejectPoi(rejectFor.id, reason);
       await load();
     } catch (e) {
-      setErr(e.message || "Reject failed");
+      setErr(e.message || "Từ chối thất bại");
     } finally {
       setActionId(null);
       setRejectFor(null);
@@ -126,17 +126,17 @@ export default function DashboardPage() {
     <div>
       <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold text-white">Pending POIs</h1>
-          <p className="text-sm text-slate-400">
-            Status PENDING — approve or reject (reject requires a reason).
+          <h1 className="text-2xl font-semibold text-slate-900">Địa Điểm Chờ Duyệt</h1>
+          <p className="text-sm text-slate-600">
+            Trạng thái PENDING — duyệt hoặc từ chối (cần lý do từ chối).
           </p>
         </div>
         <button
           type="button"
           onClick={load}
-          className="rounded-lg border border-slate-600 px-4 py-2 text-sm text-slate-200 hover:bg-slate-800"
+          className="rounded-lg border border-slate-300 px-4 py-2 text-sm text-slate-800 hover:bg-slate-50"
         >
-          Refresh
+          Làm mới
         </button>
       </div>
 
@@ -147,24 +147,24 @@ export default function DashboardPage() {
       )}
 
       {loading ? (
-        <p className="text-slate-400">Loading...</p>
+        <p className="text-slate-600">Đang tải...</p>
       ) : rows.length === 0 ? (
-        <p className="rounded-lg border border-slate-800 bg-slate-900/50 px-4 py-8 text-center text-slate-400">
-          No pending POIs.
+        <p className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-8 text-center text-slate-600">
+          Không có địa điểm chờ duyệt.
         </p>
       ) : (
-        <div className="overflow-x-auto rounded-xl border border-slate-800">
-          <table className="min-w-full divide-y divide-slate-800 text-left text-sm">
-            <thead className="bg-slate-900/80 text-slate-400">
+        <div className="overflow-hidden rounded-lg bg-white shadow">
+          <table className="min-w-full text-left text-sm">
+            <thead>
               <tr>
-                <th className="px-4 py-3 font-medium">Code</th>
-                <th className="px-4 py-3 font-medium">Content preview</th>
-                <th className="px-4 py-3 font-medium">Location</th>
-                <th className="px-4 py-3 font-medium">Created</th>
-                <th className="px-4 py-3 font-medium text-right">Actions</th>
+                <th className="bg-gray-800 px-4 py-3 text-left font-bold text-white">Mã</th>
+                <th className="bg-gray-800 px-4 py-3 text-left font-bold text-white">Tên</th>
+                <th className="bg-gray-800 px-4 py-3 text-left font-bold text-white">Tọa độ</th>
+                <th className="bg-gray-800 px-4 py-3 text-left font-bold text-white">Người gửi</th>
+                <th className="bg-gray-800 px-4 py-3 text-right font-bold text-white">Hành động</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800 bg-slate-950/40">
+            <tbody>
               {rows.map((row) => {
                 const id = String(row.id || row._id || "");
                 const busy = actionId === id;
@@ -176,20 +176,20 @@ export default function DashboardPage() {
                     ? `${lat.toFixed(4)}, ${lng.toFixed(4)}`
                     : "—";
                 return (
-                  <tr key={id} className="hover:bg-slate-900/50">
-                    <td className="px-4 py-3 font-mono text-emerald-300">
+                  <tr key={id} className="odd:bg-gray-50 even:bg-white">
+                    <td className="border-b border-gray-200 px-4 py-3 font-mono text-gray-900">
                       {row.code}
                     </td>
-                    <td className="max-w-xs truncate px-4 py-3 text-slate-300">
+                    <td className="max-w-xs truncate border-b border-gray-200 px-4 py-3 text-gray-900">
                       {contentPreview(row.content)}
                     </td>
-                    <td className="px-4 py-3 text-slate-400">{locStr}</td>
-                    <td className="px-4 py-3 text-slate-400">
-                      {row.createdAt
-                        ? new Date(row.createdAt).toLocaleString()
-                        : "—"}
+                    <td className="border-b border-gray-200 px-4 py-3 text-gray-900">{locStr}</td>
+                    <td className="border-b border-gray-200 px-4 py-3 text-gray-900">
+                      {typeof row.submittedBy === "string"
+                        ? row.submittedBy
+                        : row.submittedBy?.email || "—"}
                     </td>
-                    <td className="px-4 py-3 text-right">
+                    <td className="border-b border-gray-200 px-4 py-3 text-right">
                       <div className="flex flex-wrap justify-end gap-2">
                         <button
                           type="button"
@@ -197,7 +197,7 @@ export default function DashboardPage() {
                           onClick={() => onApprove(id)}
                           className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-emerald-500 disabled:opacity-50"
                         >
-                          Approve
+                          Duyệt
                         </button>
                         <button
                           type="button"
@@ -205,7 +205,7 @@ export default function DashboardPage() {
                           onClick={() => setRejectFor({ id, code: row.code })}
                           className="rounded-lg bg-red-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-red-500 disabled:opacity-50"
                         >
-                          Reject
+                          Từ chối
                         </button>
                       </div>
                     </td>
