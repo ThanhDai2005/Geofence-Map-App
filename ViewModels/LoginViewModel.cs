@@ -2,6 +2,8 @@ using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows.Input;
 using MauiApp1.Services;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Maui.Controls;
 
 namespace MauiApp1.ViewModels;
 
@@ -9,16 +11,18 @@ public sealed class LoginViewModel : INotifyPropertyChanged
 {
     private readonly AuthService _auth;
     private readonly INavigationService _nav;
+    private readonly IServiceProvider _services;
 
     private string _email = "";
     private string _password = "";
     private bool _isBusy;
     private string? _errorMessage;
 
-    public LoginViewModel(AuthService auth, INavigationService nav)
+    public LoginViewModel(AuthService auth, INavigationService nav, IServiceProvider services)
     {
         _auth = auth;
         _nav = nav;
+        _services = services;
         LoginCommand = new Command(ExecuteLogin, () => !IsBusy);
     }
 
@@ -105,7 +109,15 @@ public sealed class LoginViewModel : INotifyPropertyChanged
             }).ConfigureAwait(false);
 
             if (ok)
-                await _nav.PopModalAsync().ConfigureAwait(false);
+            {
+                await MainThread.InvokeOnMainThreadAsync(() =>
+                {
+                    if (global::Microsoft.Maui.Controls.Application.Current?.MainPage is Shell)
+                        _ = _nav.PopModalAsync();
+                    else if (global::Microsoft.Maui.Controls.Application.Current?.MainPage is NavigationPage)
+                        global::Microsoft.Maui.Controls.Application.Current!.MainPage = _services.GetRequiredService<MauiApp1.AppShell>();
+                }).ConfigureAwait(false);
+            }
         }
         finally
         {

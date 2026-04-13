@@ -167,6 +167,25 @@ public sealed class AuthService : INotifyPropertyChanged
     public Task LogoutAsync(CancellationToken cancellationToken = default)
         => ClearSessionAsync(notify: true);
 
+    /// <summary>Updates premium flag from local upgrade flow (demo) and persists to secure storage.</summary>
+    public async Task UpdateStoredPremiumAsync(bool isPremium, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            await SecureStorage.Default.SetAsync(StorageKeyPremium, isPremium ? "true" : "false").ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[AUTH] UpdateStoredPremiumAsync storage: {ex}");
+        }
+
+        if (_isPremium == isPremium)
+            return;
+
+        _isPremium = isPremium;
+        OnPropertyChanged(nameof(IsPremium));
+    }
+
     /// <summary>Called by <see cref="AuthDelegatingHandler"/> when a protected call returns 401.</summary>
     public Task ForceLogoutFromUnauthorizedAsync()
         => ClearSessionAsync(notify: true);

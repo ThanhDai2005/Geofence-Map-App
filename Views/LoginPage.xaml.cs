@@ -16,6 +16,21 @@ public partial class LoginPage : ContentPage
 
     private void OnCloseClicked(object sender, EventArgs e)
     {
+        if (global::Microsoft.Maui.Controls.Application.Current?.MainPage is NavigationPage nav)
+        {
+            if (nav.Navigation.NavigationStack.Count > 1)
+            {
+                _ = nav.PopAsync();
+                return;
+            }
+
+            if (nav.CurrentPage is LoginPage)
+            {
+                global::Microsoft.Maui.Controls.Application.Current?.Quit();
+                return;
+            }
+        }
+
         _ = _nav.PopModalAsync();
     }
 }

@@ -185,9 +185,11 @@ export default function DashboardPage() {
                     </td>
                     <td className="border-b border-gray-200 px-4 py-3 text-gray-900">{locStr}</td>
                     <td className="border-b border-gray-200 px-4 py-3 text-gray-900">
-                      {typeof row.submittedBy === "string"
-                        ? row.submittedBy
-                        : row.submittedBy?.email || "—"}
+                      {row.submittedBy && typeof row.submittedBy === "object" && row.submittedBy.email
+                        ? row.submittedBy.email
+                        : typeof row.submittedBy === "string"
+                          ? row.submittedBy
+                          : "—"}
                     </td>
                     <td className="border-b border-gray-200 px-4 py-3 text-right">
                       <div className="flex flex-wrap justify-end gap-2">

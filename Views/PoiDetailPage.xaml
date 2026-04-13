@@ -116,16 +116,16 @@
                                     Clicked="OnStopClicked"
                                     Grid.Column="1" />
 
-                            <!-- PREMIUM DETAILED BUTTON -->
-                            <Button Text="💎 Nghe chi tiết" 
+                            <!-- PREMIUM DETAILED BUTTON (locked for non-premium) -->
+                            <!-- Luôn bật: user thường bấm → hộp thoại Premium / nâng cấp; Premium → phát NarrationLong -->
+                            <Button Text="💎 Nghe chi tiết"
                                     Style="{StaticResource PrimaryButton}"
                                     Clicked="OnPlayDetailedClicked"
                                     Grid.Row="1"
                                     Grid.ColumnSpan="2">
                                 <Button.Triggers>
-                                    <DataTrigger TargetType="Button" Binding="{Binding IsNotPremium}" Value="True">
+                                    <DataTrigger TargetType="Button" Binding="{Binding IsPremium}" Value="False">
                                         <Setter Property="Text" Value="🔒 Nghe chi tiết (Premium)" />
-                                        <Setter Property="Opacity" Value="0.9" />
                                     </DataTrigger>
                                 </Button.Triggers>
                             </Button>

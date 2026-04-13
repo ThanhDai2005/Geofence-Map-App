@@ -6,8 +6,7 @@
     xmlns:vm="clr-namespace:MauiApp1.ViewModels"
     x:DataType="vm:LoginViewModel"
     Title="Đăng nhập"
-    BackgroundColor="{StaticResource SurfaceBackground}"
-    Shell.PresentationMode="Modal">
+    BackgroundColor="{StaticResource SurfaceBackground}">
 
     <Grid>
         <!-- BACKGROUND DECORATION -->
@@ -138,7 +137,7 @@
                                                    WidthRequest="24" />
                             </Grid>
 
-                            <Button Text="Đóng"
+                            <Button Text="Quay lại"
                                     Style="{StaticResource SecondaryButton}"
                                     Clicked="OnCloseClicked"
                                     IsEnabled="{Binding IsNotBusy}" />

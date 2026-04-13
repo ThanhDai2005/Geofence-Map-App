@@ -247,6 +247,14 @@ class PoiService {
         };
     }
 
+    _formatSubmittedBy(sb) {
+        if (sb == null) return null;
+        if (typeof sb === 'object' && sb.email) {
+            return { id: String(sb._id), email: sb.email };
+        }
+        return String(sb);
+    }
+
     _mapModerationDto(poi) {
         const content = poi.content && typeof poi.content.toObject === 'function'
             ? poi.content.toObject()
@@ -256,7 +264,7 @@ class PoiService {
             code: poi.code,
             status: poi.status ?? null,
             rejectionReason: poi.rejectionReason ?? null,
-            submittedBy: poi.submittedBy ?? null,
+            submittedBy: this._formatSubmittedBy(poi.submittedBy),
             location: {
                 lat: poi.location.coordinates[1],
                 lng: poi.location.coordinates[0]

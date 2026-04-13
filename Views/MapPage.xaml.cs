@@ -16,6 +16,7 @@ public partial class MapPage : ContentPage, IQueryAttributable
     private readonly LanguageSelectorViewModel _langSelectorVm;
     private readonly AppState _appState;
     private readonly INavigationService _navService;
+    private readonly AuthService _auth;
 
     private bool _pendingNarrateAfterFocus;
     private PeriodicTimer? _timer;
@@ -31,13 +32,14 @@ public partial class MapPage : ContentPage, IQueryAttributable
     private string? _lastAutoPoiId;
     private bool _isUserSelecting;
 
-    public MapPage(MapViewModel vm, LanguageSelectorViewModel langSelectorVm, AppState appState, INavigationService navService)
+    public MapPage(MapViewModel vm, LanguageSelectorViewModel langSelectorVm, AppState appState, INavigationService navService, AuthService auth)
     {
         InitializeComponent();
         BindingContext = _vm = vm;
         _langSelectorVm = langSelectorVm;
         _appState = appState;
         _navService = navService;
+        _auth = auth;
 
         InitBottomPanel();
 
@@ -498,22 +500,23 @@ public partial class MapPage : ContentPage, IQueryAttributable
 
     private async void OnListenDetailedClicked(object sender, EventArgs e)
     {
-        if (_vm.SelectedPoi != null)
-            await _vm.PlayPoiDetailedAsync(_vm.SelectedPoi, _vm.CurrentLanguage);
+        var poi = _vm.SelectedPoi;
+        if (poi == null) return;
+
+        // Thuyết minh chi tiết (NarrationLong) chỉ trên map khi Premium — tránh lỗ hổng "Mở trên bản đồ" rồi nghe full chi tiết khi vẫn là user thường.
+        if (!_auth.IsPremium)
+        {
+            var route = $"/poidetail?code={Uri.EscapeDataString(poi.Code)}&lang={Uri.EscapeDataString(_vm.CurrentLanguage)}";
+            await _navService.NavigateToAsync(route);
+            return;
+        }
+
+        await _vm.PlayPoiDetailedAsync(poi, _vm.CurrentLanguage);
     }
 
     private void OnStopAudioClicked(object sender, EventArgs e)
     {
         _vm.StopAudio();
-    }
-
-    private async void OnOpenDetailClicked(object sender, EventArgs e)
-    {
-        var poi = _vm.SelectedPoi;
-        if (poi == null) return;
-
-        var route = $"/poidetail?code={Uri.EscapeDataString(poi.Code)}&lang={Uri.EscapeDataString(_vm.CurrentLanguage)}";
-        await _navService.NavigateToAsync(route);
     }
 
     private async void OnLanguageButtonClicked(object sender, EventArgs e)

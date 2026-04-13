@@ -3,6 +3,9 @@ using System.Runtime.CompilerServices;
 using System.Windows.Input;
 using MauiApp1.Services;
 using MauiApp1.Views;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Maui.Controls;
+using Microsoft.Maui.Graphics;
 
 namespace MauiApp1.ViewModels;
 
@@ -73,6 +76,15 @@ public sealed class ProfileViewModel : INotifyPropertyChanged
     private async Task LogoutCoreAsync()
     {
         await _auth.LogoutAsync().ConfigureAwait(false);
+        await MainThread.InvokeOnMainThreadAsync(() =>
+        {
+            var login = _services.GetRequiredService<LoginPage>();
+            global::Microsoft.Maui.Controls.Application.Current!.MainPage = new NavigationPage(login)
+            {
+                BarBackgroundColor = Color.FromArgb("#1B3A5F"),
+                BarTextColor = Colors.White
+            };
+        });
     }
 
     private void OnPropertyChanged([CallerMemberName] string? name = null)

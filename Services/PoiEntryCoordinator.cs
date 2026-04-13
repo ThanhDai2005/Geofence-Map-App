@@ -170,16 +170,7 @@ public class PoiEntryCoordinator : IPoiEntryCoordinator
         void Reg(string lang, string? text)
         {
             if (string.IsNullOrWhiteSpace(text)) return;
-            var t = text.Trim();
-            _localization.RegisterDynamicTranslation(code, lang, new PoiLocalization
-            {
-                Code = code,
-                LanguageCode = lang,
-                Name = t,
-                Summary = t,
-                NarrationShort = t,
-                NarrationLong = t
-            });
+            _localization.RegisterDynamicTranslation(code, lang, PoiServerContentParser.BuildLocalization(code, lang, text));
         }
 
         Reg("en", data.Content?.En);

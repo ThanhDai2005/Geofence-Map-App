@@ -110,10 +110,9 @@
                 <!-- BUTTONS -->
                     <Grid Grid.Row="2"
                   Padding="16"
-                  RowDefinitions="Auto,Auto"
+                  RowDefinitions="Auto"
                   ColumnDefinitions="*,*"
-                  ColumnSpacing="10"
-                  RowSpacing="10">
+                  ColumnSpacing="10">
 
                         <Button Text="🔊 Nghe chi tiết"
                                 Style="{StaticResource PrimaryButton}"
@@ -123,12 +122,6 @@
                         Text="⏹ Dừng"
                         Style="{StaticResource SecondaryButton}"
                         Clicked="OnStopAudioClicked" />
-
-                        <Button Grid.Row="1"
-                                Grid.ColumnSpan="2"
-                                Text="📄 Xem chi tiết địa điểm"
-                                Style="{StaticResource SecondaryButton}"
-                                Clicked="OnOpenDetailClicked" />
                     </Grid>
 
                 </Grid>

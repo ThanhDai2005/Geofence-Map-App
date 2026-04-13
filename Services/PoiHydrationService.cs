@@ -238,16 +238,7 @@ public class PoiHydrationService
                 void Reg(string lang, string? t)
                 {
                     if (string.IsNullOrWhiteSpace(t)) return;
-                    var s = t.Trim();
-                    _locService.RegisterDynamicTranslation(code, lang, new PoiLocalization
-                    {
-                        Code = code,
-                        LanguageCode = lang,
-                        Name = s,
-                        Summary = s,
-                        NarrationShort = s,
-                        NarrationLong = s
-                    });
+                    _locService.RegisterDynamicTranslation(code, lang, PoiServerContentParser.BuildLocalization(code, lang, t));
                 }
 
                 Reg("vi", vi);

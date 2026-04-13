@@ -74,7 +74,20 @@ class PoiRepository {
         return await Poi.find({ status: POI_STATUS.PENDING })
             .sort({ createdAt: -1 })
             .skip(skip)
-            .limit(limit);
+            .limit(limit)
+            .populate('submittedBy', 'email');
+    }
+
+    async findBySubmitter(userId, { limit, skip }) {
+        return await Poi.find({ submittedBy: userId })
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(limit)
+            .populate('submittedBy', 'email');
+    }
+
+    async countBySubmitter(userId) {
+        return await Poi.countDocuments({ submittedBy: userId });
     }
 
     async countPending() {
