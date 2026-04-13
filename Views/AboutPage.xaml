@@ -7,109 +7,148 @@
     BackgroundColor="{StaticResource SurfaceBackground}">
 
     <ScrollView>
-        <VerticalStackLayout Padding="20,20,20,120" Spacing="20">
+        <VerticalStackLayout Padding="20,24,20,120" Spacing="28">
 
-            <!-- HEADER CARD -->
-            <Border Style="{StaticResource CardBorder}" Padding="0">
-                <Grid RowDefinitions="230,Auto">
-                    <Grid>
-                        <Image Source="logotravelvn.png"
-                               Aspect="AspectFit"
-                               Margin="20" />
+            <!-- HERO SECTION -->
+            <Border Style="{StaticResource CardBorder}" Padding="0" StrokeThickness="0">
+                <Grid RowDefinitions="240,Auto">
+                    <!-- HERO BACKGROUND -->
+                    <Grid Grid.RowSpan="2">
+                        <Grid.Background>
+                            <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                <GradientStop Color="{StaticResource BrandPrimaryDark}" Offset="0.0" />
+                                <GradientStop Color="{StaticResource NatureEmerald}" Offset="1.0" />
+                            </LinearGradientBrush>
+                        </Grid.Background>
                     </Grid>
 
-                    <VerticalStackLayout Grid.Row="1"
-                                         Padding="20"
-                                         Spacing="10">
-                        <Label Text="VN GO Travel"
-                               Style="{StaticResource PageTitleLabel}" />
+                    <Image Grid.Row="0"
+                           Source="logotravelvn.png"
+                           Aspect="AspectFit"
+                           Margin="40"
+                           Opacity="0.95" />
 
-                        <Label Text="Ứng dụng du lịch giúp người dùng khám phá vẻ đẹp Việt Nam bằng bản đồ, hình ảnh, GPS và thuyết minh đa ngôn ngữ."
-                               Style="{StaticResource BodyText}" />
+                    <VerticalStackLayout Grid.Row="1"
+                                         Padding="24,0,24,28"
+                                         Spacing="12">
+                        <Label Text="VN GO Travel"
+                               FontSize="32"
+                               FontAttributes="Bold"
+                               TextColor="White"
+                               HorizontalOptions="Center" />
+
+                        <Label Text="Khám phá vẻ đẹp Việt Nam qua lăng kính công nghệ"
+                               FontSize="16"
+                               TextColor="#EAEAEA"
+                               HorizontalOptions="Center"
+                               HorizontalTextAlignment="Center" />
                     </VerticalStackLayout>
                 </Grid>
             </Border>
 
-            <Label Text="Việt Nam trong từng hành trình"
-                   Style="{StaticResource SectionTitle}" />
+            <!-- MISSION SECTION -->
+            <VerticalStackLayout Spacing="16">
+                <Label Text="Tầm nhìn của chúng tôi"
+                       Style="{StaticResource SectionTitle}" />
 
-            <!-- INTRO CARD -->
-            <Border Style="{StaticResource CardBorder}">
-                <VerticalStackLayout Spacing="14">
-                    <Label Text="Việt Nam là đất nước của núi non hùng vĩ, những kỳ quan thiên nhiên nổi tiếng, các phố cổ đậm chiều sâu văn hóa và những vùng đất mang bản sắc riêng ở từng miền. VN GO Travel được xây dựng để giới thiệu vẻ đẹp đó bằng một trải nghiệm trực quan, hiện đại và truyền cảm hứng hơn."
-                           FontSize="16"
-                           TextColor="{StaticResource TextPrimary}"
-                           LineBreakMode="WordWrap" />
+                <Border Style="{StaticResource CardBorder}" Padding="24">
+                    <VerticalStackLayout Spacing="20">
+                        <Label Text="Việt Nam là đất nước của núi non hùng vĩ và những phố cổ đậm chiều sâu văn hóa. VN GO Travel được xây dựng để giới thiệu vẻ đẹp đó bằng một trải nghiệm trực quan, hiện đại và truyền cảm hứng hơn."
+                               Style="{StaticResource BodyText}"
+                               FontSize="16"
+                               TextColor="{StaticResource TextPrimary}" />
 
-                    <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
-                        <Button Text="🎧 Nghe giới thiệu Việt Nam"
-                                Style="{StaticResource PrimaryButton}"
-                                Clicked="OnPlayIntroClicked" />
+                        <!-- AUDIO CONTROLS -->
+                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                            <Button Text="🎧 Nghe lời giới thiệu"
+                                    Style="{StaticResource PrimaryButton}"
+                                    Clicked="OnPlayIntroClicked" />
 
-                        <Button Grid.Column="1"
-                                Text="⏹ Dừng"
-                                Style="{StaticResource SecondaryButton}"
-                                Clicked="OnStopIntroClicked" />
-                    </Grid>
-                </VerticalStackLayout>
-            </Border>
+                            <Button Grid.Column="1"
+                                    Text="⏹"
+                                    Style="{StaticResource SecondaryButton}"
+                                    WidthRequest="60"
+                                    Clicked="OnStopIntroClicked" />
+                        </Grid>
+                    </VerticalStackLayout>
+                </Border>
+            </VerticalStackLayout>
 
-            <!-- FEATURES -->
-            <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
-                <Border Style="{StaticResource CardBorder}">
-                    <VerticalStackLayout Spacing="8">
-                        <Label Text="🏞 Thiên nhiên"
-                               FontSize="17"
+            <!-- FEATURES GRID -->
+            <Grid ColumnDefinitions="*,*" ColumnSpacing="14">
+                <Border Style="{StaticResource CardBorder}" Padding="18">
+                    <VerticalStackLayout Spacing="10">
+                        <Label Text="🏞" FontSize="28" />
+                        <Label Text="Thiên nhiên"
+                               FontSize="16"
                                FontAttributes="Bold"
                                TextColor="{StaticResource NatureEmerald}" />
-
-                        <Label Text="Khám phá kỳ quan, núi non, sông hồ, bãi biển và những vùng đất đẹp bậc nhất Việt Nam."
-                               Style="{StaticResource BodyText}" />
+                        <Label Text="Khám phá kỳ quan, núi non và biển cả Việt Nam."
+                               FontSize="13"
+                               TextColor="{StaticResource TextSecondary}" />
                     </VerticalStackLayout>
                 </Border>
 
-                <Border Style="{StaticResource CardBorder}">
-                    <VerticalStackLayout Spacing="8">
-                        <Label Text="🗺 Thông minh"
-                               FontSize="17"
+                <Border Grid.Column="1" Style="{StaticResource CardBorder}" Padding="18">
+                    <VerticalStackLayout Spacing="10">
+                        <Label Text="🗺" FontSize="28" />
+                        <Label Text="Thông minh"
+                               FontSize="16"
                                FontAttributes="Bold"
                                TextColor="{StaticResource NatureBlue}" />
-
-                        <Label Text="Theo dõi vị trí, hiển thị POI, hỗ trợ song ngữ và phát thuyết minh theo hành trình thực tế."
-                               Style="{StaticResource BodyText}" />
+                        <Label Text="Theo dõi vị trí và nghe thuyết minh tự động."
+                               FontSize="13"
+                               TextColor="{StaticResource TextSecondary}" />
                     </VerticalStackLayout>
                 </Border>
             </Grid>
 
-            <!-- VALUES -->
-            <Border Style="{StaticResource CardBorder}">
-                <VerticalStackLayout Spacing="10">
-                    <Label Text="Giá trị mà ứng dụng hướng đến"
-                           FontSize="20"
-                           FontAttributes="Bold"
-                           TextColor="{StaticResource TextPrimary}" />
+            <!-- VALUES SECTION -->
+            <VerticalStackLayout Spacing="16">
+                <Label Text="Giá trị cốt lõi"
+                       Style="{StaticResource SectionTitle}" />
 
-                    <Label Text="• Tôn vinh vẻ đẹp thiên nhiên và văn hóa Việt Nam"
-                           Style="{StaticResource BodyText}" />
-                    <Label Text="• Tạo trải nghiệm khám phá sinh động cho người Việt và du khách quốc tế"
-                           Style="{StaticResource BodyText}" />
-                    <Label Text="• Kết hợp công nghệ hiện đại với nội dung truyền cảm hứng"
-                           Style="{StaticResource BodyText}" />
-                </VerticalStackLayout>
-            </Border>
+                <Border Style="{StaticResource CardBorder}">
+                    <VerticalStackLayout Spacing="16">
+                        
+                        <HorizontalStackLayout Spacing="12">
+                            <Border BackgroundColor="{StaticResource SurfaceSoft}" Padding="8" StrokeShape="RoundRectangle 8" WidthRequest="36" HeightRequest="36">
+                                <Label Text="🎨" HorizontalOptions="Center" VerticalOptions="Center" />
+                            </Border>
+                            <Label Text="Tôn vinh vẻ đẹp thiên nhiên Việt Nam" 
+                                   Style="{StaticResource BodyText}" 
+                                   VerticalOptions="Center" />
+                        </HorizontalStackLayout>
 
-            <!-- FOOTER -->
-            <Border Style="{StaticResource CardBorder}">
-                <VerticalStackLayout Spacing="8">
-                    <Label Text="VN GO Travel"
-                           FontSize="18"
-                           FontAttributes="Bold"
-                           TextColor="{StaticResource BrandPrimaryDark}" />
+                        <HorizontalStackLayout Spacing="12">
+                            <Border BackgroundColor="{StaticResource SurfaceSoft}" Padding="8" StrokeShape="RoundRectangle 8" WidthRequest="36" HeightRequest="36">
+                                <Label Text="🚀" HorizontalOptions="Center" VerticalOptions="Center" />
+                            </Border>
+                            <Label Text="Trải nghiệm khám phá sinh động" 
+                                   Style="{StaticResource BodyText}" 
+                                   VerticalOptions="Center" />
+                        </HorizontalStackLayout>
 
-                    <Label Text="Một hành trình số để kể lại vẻ đẹp Việt Nam theo cách hiện đại, tinh tế và gần gũi hơn."
-                           Style="{StaticResource BodyText}" />
-                </VerticalStackLayout>
-            </Border>
+                        <HorizontalStackLayout Spacing="12">
+                            <Border BackgroundColor="{StaticResource SurfaceSoft}" Padding="8" StrokeShape="RoundRectangle 8" WidthRequest="36" HeightRequest="36">
+                                <Label Text="💡" HorizontalOptions="Center" VerticalOptions="Center" />
+                            </Border>
+                            <Label Text="Kết hợp công nghệ với cảm hứng" 
+                                   Style="{StaticResource BodyText}" 
+                                   VerticalOptions="Center" />
+                        </HorizontalStackLayout>
+
+                    </VerticalStackLayout>
+                </Border>
+            </VerticalStackLayout>
+
+            <!-- FOOTER TAGLINE -->
+            <Label Text="Một hành trình số tinh tế — VN GO Travel"
+                   FontSize="13"
+                   FontAttributes="Italic"
+                   TextColor="{StaticResource TextSecondary}"
+                   HorizontalOptions="Center"
+                   Margin="0,0,0,20" />
 
         </VerticalStackLayout>
     </ScrollView>

@@ -21,6 +21,9 @@ public class PoiDetailViewModel : INotifyPropertyChanged, IQueryAttributable
     private readonly IPreferredLanguageService _languagePrefs;
     private readonly INavigationService      _navService;
     private readonly AppState                _appState;
+    private readonly IPremiumService         _premiumService;
+
+    public System.Windows.Input.ICommand UpgradeCommand { get; }
 
     private string? _lastLoadedCode;
     private bool    _languageListenerAttached;
@@ -34,7 +37,8 @@ public class PoiDetailViewModel : INotifyPropertyChanged, IQueryAttributable
         MapViewModel mapVm,
         IPreferredLanguageService languagePrefs,
         INavigationService navService,
-        AppState appState)
+        AppState appState,
+        IPremiumService premiumService)
     {
         _getPoiDetailUseCase = getPoiDetailUseCase;
         _playPoiAudioUseCase = playPoiAudioUseCase;
@@ -44,6 +48,9 @@ public class PoiDetailViewModel : INotifyPropertyChanged, IQueryAttributable
         _languagePrefs    = languagePrefs;
         _navService       = navService;
         _appState         = appState;
+        _premiumService   = premiumService;
+
+        UpgradeCommand = new Command(async () => await UpgradeAsync());
     }
 
     // ── Language change listener ──────────────────────────────────────────────
@@ -96,8 +103,26 @@ public class PoiDetailViewModel : INotifyPropertyChanged, IQueryAttributable
             OnPropertyChanged(nameof(OpenOnMapButtonText));
             OnPropertyChanged(nameof(PlayButtonText));
             OnPropertyChanged(nameof(StopButtonText));
+            OnPropertyChanged(nameof(IsPremium));
+            OnPropertyChanged(nameof(IsNotPremium));
         }
     }
+
+    public bool IsPremium
+    {
+        get => _premiumService.IsPremium;
+        set
+        {
+            if (_premiumService.IsPremium != value)
+            {
+                _premiumService.IsPremium = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(IsNotPremium));
+            }
+        }
+    }
+
+    public bool IsNotPremium => !IsPremium;
 
     // ── Shell query attributes ────────────────────────────────────────────────
 
@@ -237,18 +262,94 @@ public class PoiDetailViewModel : INotifyPropertyChanged, IQueryAttributable
 
     // ── Audio ─────────────────────────────────────────────────────────────────
 
+    /// <summary>
+    /// Plays the standard SHORT narration (FREE).
+    /// </summary>
     public async Task PlayAsync()
     {
         if (Poi == null || IsBusy) return;
         IsBusy = true;
         try
         {
-            await _playPoiAudioUseCase.ExecuteAsync(Poi.Code, "currentUserId");
+            // Stop any existing playback first for audio safety
+            _narrationService.Stop();
+            
+            // Call narration service directly for the short (free) path
+            await _narrationService.PlayPoiAsync(Poi);
         }
         finally
         {
             IsBusy = false;
         }
+    }
+
+    /// <summary>
+    /// Plays the LONG detailed narration. 
+    /// Premium users: Full access.
+    /// Free users: 5-second preview then upgrade prompt.
+    /// </summary>
+    public async Task PlayDetailedAsync()
+    {
+        if (Poi == null || IsBusy) return;
+        IsBusy = true;
+        try
+        {
+            // 1. Audio Safety - Stop existing streams
+            _narrationService.Stop();
+
+            if (IsPremium)
+            {
+                // Premium: Play full detailed narration
+                await _narrationService.PlayPoiDetailedAsync(Poi);
+            }
+            else
+            {
+                // Free: 5-second preview flow
+                await _narrationService.PlayPoiDetailedAsync(Poi);
+                
+                // Allow preview for 5 seconds
+                await Task.Delay(5000);
+
+                // Stop after preview if they haven't manually stopped or navigated
+                if (!IsPremium)
+                {
+                    _narrationService.Stop();
+                    
+                    // Trigger upgrade prompt on main thread
+                    await MainThread.InvokeOnMainThreadAsync(async () =>
+                    {
+                        if (Microsoft.Maui.Controls.Application.Current?.Windows.FirstOrDefault()?.Page is Page page)
+                        {
+                            bool upgrade = await page.DisplayAlert(
+                                "Tính năng Premium", 
+                                "Bạn vừa nghe bản dùng thử. Vui lòng nâng cấp Premium để nghe toàn bộ nội dung chi tiết và hấp dẫn hơn!", 
+                                "Nâng cấp ngay", 
+                                "Để sau");
+                            
+                            if (upgrade) await UpgradeAsync();
+                        }
+                    });
+                }
+            }
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    public async Task UpgradeAsync()
+    {
+        IsPremium = true;
+        Debug.WriteLine("[PREMIUM] User upgraded to premium state.");
+        
+        await MainThread.InvokeOnMainThreadAsync(async () =>
+        {
+            if (Microsoft.Maui.Controls.Application.Current?.Windows.FirstOrDefault()?.Page is Page page)
+            {
+                await page.DisplayAlert("Chúc mừng!", "Bạn đã mở khóa thành công gói Premium. Giờ đây bạn có thể nghe toàn bộ các bản thuyết minh chi tiết.", "Tuyệt vời");
+            }
+        });
     }
 
     public void Stop() => _narrationService.Stop();

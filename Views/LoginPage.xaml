@@ -5,47 +5,157 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     xmlns:vm="clr-namespace:MauiApp1.ViewModels"
     x:DataType="vm:LoginViewModel"
-    Title="Dang nhap"
-    BackgroundColor="{StaticResource SurfaceBackground}">
+    Title="Đăng nhập"
+    BackgroundColor="{StaticResource SurfaceBackground}"
+    Shell.PresentationMode="Modal">
 
-    <ScrollView>
-        <VerticalStackLayout Padding="24" Spacing="16" VerticalOptions="Center">
+    <Grid>
+        <!-- BACKGROUND DECORATION -->
+        <BoxView VerticalOptions="Start" HeightRequest="300">
+            <BoxView.Background>
+                <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                    <GradientStop Color="{StaticResource BrandPrimaryDark}" Offset="0.0" />
+                    <GradientStop Color="{StaticResource BrandPrimary}" Offset="0.6" />
+                    <GradientStop Color="{StaticResource SurfaceBackground}" Offset="1.0" />
+                </LinearGradientBrush>
+            </BoxView.Background>
+        </BoxView>
 
-            <Label Text="Dang nhap VN GO Travel"
-                   Style="{StaticResource PageTitleLabel}" />
+        <ScrollView>
+            <VerticalStackLayout Padding="24,60,24,40" Spacing="0">
 
-            <Label Text="Su dung tai khoan da dang ky tren may chu."
-                   Style="{StaticResource BodyText}" />
+                <!-- HERO SECTION -->
+                <VerticalStackLayout Spacing="12" HorizontalOptions="Center" Margin="0,0,0,32">
+                    <Border StrokeShape="RoundRectangle 24" 
+                            HeightRequest="80" 
+                            WidthRequest="80" 
+                            BackgroundColor="White" 
+                            Padding="12"
+                            HorizontalOptions="Center">
+                        <Image Source="travel_login_hero.png" 
+                               Aspect="AspectFit" />
+                        <Border.Shadow>
+                            <Shadow Brush="Black" Offset="0,4" Radius="10" Opacity="0.1" />
+                        </Border.Shadow>
+                    </Border>
 
-            <Label Text="Email" Style="{StaticResource SectionTitle}" />
-            <Entry Text="{Binding Email}"
-                   Keyboard="Email"
-                   Placeholder="email@example.com"
-                   IsEnabled="{Binding IsNotBusy}" />
+                    <Label Text="VN GO Travel" 
+                           TextColor="White" 
+                           FontSize="24" 
+                           FontAttributes="Bold" 
+                           HorizontalOptions="Center" />
+                    <Label Text="Khám phá Việt Nam theo cách của bạn" 
+                           TextColor="White" 
+                           Opacity="0.8"
+                           FontSize="14" 
+                           HorizontalOptions="Center" />
+                </VerticalStackLayout>
 
-            <Label Text="Mat khau" Style="{StaticResource SectionTitle}" />
-            <Entry Text="{Binding Password}"
-                   IsPassword="True"
-                   Placeholder="********"
-                   IsEnabled="{Binding IsNotBusy}" />
+                <!-- LOGIN CARD -->
+                <Border Style="{StaticResource CardBorder}" Padding="28">
+                    <VerticalStackLayout Spacing="24">
+                        
+                        <VerticalStackLayout Spacing="8">
+                            <Label Text="Chào mừng trở lại!" 
+                                   Style="{StaticResource SectionTitle}" 
+                                   FontSize="20" 
+                                   HorizontalOptions="Start" />
+                            <Label Text="Đăng nhập để tiếp tục hành trình" 
+                                   TextColor="{StaticResource TextSecondary}" 
+                                   FontSize="14" />
+                        </VerticalStackLayout>
 
-            <Label Text="{Binding ErrorMessage}"
-                   TextColor="#FF6B6B"
-                   IsVisible="{Binding HasError}"
-                   Style="{StaticResource BodyText}" />
+                        <!-- INPUT FIELDS -->
+                        <VerticalStackLayout Spacing="16">
+                            
+                            <VerticalStackLayout Spacing="6">
+                                <Label Text="Email"
+                                       FontSize="12"
+                                       FontAttributes="Bold"
+                                       TextColor="{StaticResource TextSecondary}"
+                                       Margin="4,0" />
+                                <Border Stroke="{StaticResource BorderLight}"
+                                        StrokeThickness="1"
+                                        Padding="12,4"
+                                        StrokeShape="RoundRectangle 12"
+                                        BackgroundColor="White">
+                                    <Entry Text="{Binding Email}"
+                                           Placeholder="email@example.com"
+                                           PlaceholderColor="{StaticResource TextSecondary}"
+                                           Keyboard="Email"
+                                           IsEnabled="{Binding IsNotBusy}"
+                                           BackgroundColor="White"
+                                           TextColor="Black" />
+                                </Border>
+                            </VerticalStackLayout>
 
-            <ActivityIndicator IsRunning="{Binding IsBusy}"
-                               IsVisible="{Binding IsBusy}"
-                               Color="{StaticResource BrandPrimaryDark}" />
+                            <VerticalStackLayout Spacing="6">
+                                <Label Text="Mật khẩu"
+                                       FontSize="12"
+                                       FontAttributes="Bold"
+                                       TextColor="{StaticResource TextSecondary}"
+                                       Margin="4,0" />
+                                <Border Stroke="{StaticResource BorderLight}"
+                                        StrokeThickness="1"
+                                        Padding="12,4"
+                                        StrokeShape="RoundRectangle 12"
+                                        BackgroundColor="White">
+                                    <Entry Text="{Binding Password}"
+                                           Placeholder="••••••••"
+                                           PlaceholderColor="{StaticResource TextSecondary}"
+                                           IsPassword="True"
+                                           IsEnabled="{Binding IsNotBusy}"
+                                           BackgroundColor="White"
+                                           TextColor="Black" />
+                                </Border>
+                            </VerticalStackLayout>
 
-            <Button Text="Dang nhap"
-                    Style="{StaticResource PrimaryButton}"
-                    Command="{Binding LoginCommand}"
-                    IsEnabled="{Binding IsNotBusy}" />
+                        </VerticalStackLayout>
 
-            <Button Text="Dong"
-                    Style="{StaticResource SecondaryButton}"
-                    Clicked="OnCloseClicked" />
-        </VerticalStackLayout>
-    </ScrollView>
+                        <!-- ERROR MESSAGE -->
+                        <Label Text="{Binding ErrorMessage}"
+                               TextColor="#FF5252"
+                               FontSize="13"
+                               HorizontalOptions="Center"
+                               IsVisible="{Binding HasError}"
+                               Margin="0,-8,0,0" />
+
+                        <!-- BUTTONS -->
+                        <VerticalStackLayout Spacing="12">
+                            
+                            <Grid>
+                                <Button Text="Đăng nhập"
+                                        Style="{StaticResource PrimaryButton}"
+                                        Command="{Binding LoginCommand}"
+                                        IsEnabled="{Binding IsNotBusy}" />
+                                
+                                <ActivityIndicator IsRunning="{Binding IsBusy}"
+                                                   IsVisible="{Binding IsBusy}"
+                                                   Color="White"
+                                                   VerticalOptions="Center"
+                                                   HorizontalOptions="Center"
+                                                   HeightRequest="24"
+                                                   WidthRequest="24" />
+                            </Grid>
+
+                            <Button Text="Đóng"
+                                    Style="{StaticResource SecondaryButton}"
+                                    Clicked="OnCloseClicked"
+                                    IsEnabled="{Binding IsNotBusy}" />
+
+                        </VerticalStackLayout>
+
+                    </VerticalStackLayout>
+                </Border>
+
+                <!-- FOOTER -->
+                <Label Text="Chưa có tài khoản? Liên hệ quản trị viên." 
+                       TextColor="{StaticResource TextSecondary}"
+                       FontSize="13"
+                       HorizontalOptions="Center"
+                       Margin="0,32,0,0" />
+
+            </VerticalStackLayout>
+        </ScrollView>
+    </Grid>
 </ContentPage>

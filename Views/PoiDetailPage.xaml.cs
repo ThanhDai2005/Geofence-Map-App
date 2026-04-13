@@ -38,6 +38,11 @@ public partial class PoiDetailPage : ContentPage
         await _vm.OpenOnMapAsync();
     }
 
+    private async void OnPlayDetailedClicked(object sender, EventArgs e)
+    {
+        await _vm.PlayDetailedAsync();
+    }
+
     private void OnStopClicked(object sender, EventArgs e)
     {
         _vm.Stop();

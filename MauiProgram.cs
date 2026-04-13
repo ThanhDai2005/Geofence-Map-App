@@ -127,6 +127,7 @@ public static class MauiProgram
 
         builder.Services.AddSingleton<SessionAuthRepository>();
         builder.Services.AddSingleton<IAuthRepository>(sp => sp.GetRequiredService<SessionAuthRepository>());
+        builder.Services.AddSingleton<IPremiumService, PremiumService>();
         builder.Services.AddSingleton<NoOpSubscriptionRepository>();
         builder.Services.AddSingleton<ISubscriptionRepository>(sp => sp.GetRequiredService<NoOpSubscriptionRepository>());
 

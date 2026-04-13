@@ -4,115 +4,132 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     xmlns:zxing="clr-namespace:ZXing.Net.Maui.Controls;assembly=ZXing.Net.MAUI.Controls"
     x:Class="MauiApp1.Views.QrScannerPage"
-    Title="Quét mã"
-    BackgroundColor="{StaticResource SurfaceBackground}">
+    Title="Quét mã QR"
+    BackgroundColor="Black">
 
-    <ScrollView>
-        <VerticalStackLayout Padding="16" Spacing="14">
+    <Grid>
+        <!-- LAYER 0: CAMERA CAMERA CONTAINER -->
+        <Grid x:Name="CameraContainer" BackgroundColor="Black">
+            <zxing:CameraBarcodeReaderView
+                x:Name="CameraView"
+                IsDetecting="False"
+                BarcodesDetected="OnBarcodesDetected" />
+        </Grid>
 
-            <!-- Camera first: primary focus -->
-            <Frame
-                Padding="0"
-                CornerRadius="12"
-                BackgroundColor="#0D0D0D"
-                BorderColor="#2A2A2A"
-                HasShadow="True">
-                <Grid x:Name="CameraContainer" HeightRequest="400" BackgroundColor="#000">
+        <!-- LAYER 1: VIGNETTE / OVERLAYS FOR READABILITY -->
+        <Grid Padding="0" InputTransparent="True">
+            <Grid.Background>
+                <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                    <GradientStop Color="#AA000000" Offset="0.0" />
+                    <GradientStop Color="Transparent" Offset="0.3" />
+                    <GradientStop Color="Transparent" Offset="0.7" />
+                    <GradientStop Color="#AA000000" Offset="1.0" />
+                </LinearGradientBrush>
+            </Grid.Background>
+        </Grid>
 
-                    <zxing:CameraBarcodeReaderView
-                        x:Name="CameraView"
-                        IsDetecting="False"
-                        BarcodesDetected="OnBarcodesDetected" />
-
-                    <!-- Top status strip (readable on dark preview) -->
-                    <Border
-                        VerticalOptions="Start"
-                        BackgroundColor="#CC000000"
-                        StrokeThickness="0"
-                        Padding="12,10">
-                        <VerticalStackLayout Spacing="8">
-                            <ActivityIndicator
-                                IsRunning="{Binding IsProcessingScan}"
-                                IsVisible="{Binding IsProcessingScan}"
-                                Color="White"
-                                HeightRequest="28" />
-                            <Label
-                                Text="{Binding UxStatusText}"
-                                FontSize="15"
-                                FontAttributes="Bold"
-                                TextColor="White"
-                                LineBreakMode="WordWrap" />
-                        </VerticalStackLayout>
-                    </Border>
-
-                    <!-- Scan target: corner brackets + subtle scan line -->
-                    <Grid
-                        InputTransparent="True"
-                        VerticalOptions="Center"
-                        HorizontalOptions="Center"
-                        WidthRequest="260"
-                        HeightRequest="260">
-                        <Border
-                            Stroke="#B3FFFFFF"
-                            StrokeThickness="2"
-                            BackgroundColor="Transparent"
-                            Padding="0">
-                            <Border.StrokeShape>
-                                <RoundRectangle CornerRadius="16" />
-                            </Border.StrokeShape>
-                            <Grid x:Name="ScanFrameGrid">
-                                <BoxView
-                                    x:Name="ScanLine"
-                                    HeightRequest="2"
-                                    Color="#66FF4081"
-                                    VerticalOptions="Start"
-                                    HorizontalOptions="Fill"
-                                    Margin="8,24,8,0" />
-                            </Grid>
-                        </Border>
-                    </Grid>
-
+        <!-- LAYER 2: SCAN HUD (TOP) -->
+        <VerticalStackLayout VerticalOptions="Start" Padding="20,60,20,0" Spacing="16" InputTransparent="True">
+            
+            <Border BackgroundColor="#CCFFFFFF"
+                    StrokeThickness="0"
+                    Padding="16,10"
+                    HorizontalOptions="Center"
+                    StrokeShape="RoundRectangle 20">
+                <HorizontalStackLayout Spacing="10">
+                    <ActivityIndicator
+                        IsRunning="{Binding IsProcessingScan}"
+                        IsVisible="{Binding IsProcessingScan}"
+                        Color="{StaticResource BrandAccent}"
+                        HeightRequest="20"
+                        WidthRequest="20" />
                     <Label
-                        InputTransparent="True"
-                        Text="Căn mã trong khung"
-                        FontSize="12"
-                        TextColor="#CCFFFFFF"
-                        VerticalOptions="End"
-                        HorizontalOptions="Center"
-                        Margin="0,0,0,12" />
-                </Grid>
-            </Frame>
+                        Text="{Binding UxStatusText}"
+                        FontSize="14"
+                        FontAttributes="Bold"
+                        TextColor="{StaticResource SurfaceDark}"
+                        VerticalOptions="Center" />
+                </HorizontalStackLayout>
+            </Border>
 
-            <!-- Error / detail -->
-            <Label
-                Text="{Binding UxDetailError}"
-                FontSize="14"
-                TextColor="#D32F2F"
-                LineBreakMode="WordWrap"
-                IsVisible="{Binding HasDetailError}" />
+            <!-- ERROR MSG -->
+            <Border IsVisible="{Binding HasDetailError}"
+                    BackgroundColor="#EEFFEBEE"
+                    Stroke="#D32F2F"
+                    StrokeThickness="1"
+                    Padding="12,8"
+                    HorizontalOptions="Center"
+                    StrokeShape="RoundRectangle 12">
+                <Label
+                    Text="{Binding UxDetailError}"
+                    FontSize="12"
+                    TextColor="#D32F2F"
+                    HorizontalTextAlignment="Center" />
+            </Border>
 
-            <!-- Manual fallback -->
-            <Label Style="{StaticResource SectionTitle}" Text="Nhập mã thủ công" FontSize="18" />
-            <Label
-                Style="{StaticResource BodyText}"
-                Text="Định dạng: poi:CODE hoặc URL https://…/poi/CODE"
-                FontSize="13" />
-            <Editor
-                Text="{Binding InputText}"
-                HeightRequest="100"
-                Placeholder="Ví dụ: poi:HO_GUOM"
-                IsEnabled="{Binding IsScannerAcceptingInput}" />
-
-            <HorizontalStackLayout Spacing="10">
-                <Button
-                    Style="{StaticResource PrimaryButton}"
-                    Text="Dùng mã đã nhập"
-                    Command="{Binding ScanCommand}" />
-                <Button
-                    Style="{StaticResource SecondaryButton}"
-                    Text="Đóng"
-                    Command="{Binding CancelCommand}" />
-            </HorizontalStackLayout>
         </VerticalStackLayout>
-    </ScrollView>
+
+        <!-- LAYER 3: SCAN RETICLE -->
+        <Grid VerticalOptions="Center" HorizontalOptions="Center" InputTransparent="True">
+            <Border x:Name="ScanFrameGrid"
+                    Stroke="#CCFFFFFF"
+                    StrokeThickness="1"
+                    BackgroundColor="Transparent"
+                    WidthRequest="280"
+                    HeightRequest="280"
+                    Padding="0">
+                <Border.StrokeShape>
+                    <RoundRectangle CornerRadius="32" />
+                </Border.StrokeShape>
+                
+                <Grid>
+                    <!-- CORNER BRACKETS STYLE -->
+                    <!-- (Using simple BoxViews inside the border for visual flair) -->
+                    <BoxView WidthRequest="40" HeightRequest="4" Color="White" VerticalOptions="Start" HorizontalOptions="Start" Margin="20,20" CornerRadius="2" />
+                    <BoxView WidthRequest="4" HeightRequest="40" Color="White" VerticalOptions="Start" HorizontalOptions="Start" Margin="20,20" CornerRadius="2" />
+                    
+                    <BoxView WidthRequest="40" HeightRequest="4" Color="White" VerticalOptions="Start" HorizontalOptions="End" Margin="20,20" CornerRadius="2" />
+                    <BoxView WidthRequest="4" HeightRequest="40" Color="White" VerticalOptions="Start" HorizontalOptions="End" Margin="20,20" CornerRadius="2" />
+                    
+                    <BoxView WidthRequest="40" HeightRequest="4" Color="White" VerticalOptions="End" HorizontalOptions="Start" Margin="20,20" CornerRadius="2" />
+                    <BoxView WidthRequest="4" HeightRequest="40" Color="White" VerticalOptions="End" HorizontalOptions="Start" Margin="20,20" CornerRadius="2" />
+                    
+                    <BoxView WidthRequest="40" HeightRequest="4" Color="White" VerticalOptions="End" HorizontalOptions="End" Margin="20,20" CornerRadius="2" />
+                    <BoxView WidthRequest="4" HeightRequest="40" Color="White" VerticalOptions="End" HorizontalOptions="End" Margin="20,20" CornerRadius="2" />
+
+                    <!-- SCAN LINE (ANIMATED IN CODE BEHIND) -->
+                    <BoxView
+                        x:Name="ScanLine"
+                        HeightRequest="2"
+                        Color="{StaticResource BrandAccent}"
+                        VerticalOptions="Start"
+                        HorizontalOptions="Fill"
+                        Margin="15,40,15,0"
+                        Opacity="0.8" />
+                </Grid>
+            </Border>
+            
+            <Label Text="Căn mã QR vào giữa khung"
+                   TextColor="White"
+                   FontSize="13"
+                   FontAttributes="Italic"
+                   VerticalOptions="End"
+                   HorizontalOptions="Center"
+                   Margin="0,0,0,-40" />
+        </Grid>
+
+        <!-- LAYER 4: BOTTOM ACTIONS -->
+        <VerticalStackLayout VerticalOptions="End" Padding="30,0,30,50" Spacing="20">
+            <Button
+                Text="Hủy"
+                Style="{StaticResource SecondaryButton}"
+                Command="{Binding CancelCommand}"
+                BackgroundColor="#BBFFFFFF"
+                TextColor="{StaticResource SurfaceDark}"
+                FontAttributes="Bold"
+                CornerRadius="26"
+                HeightRequest="52" />
+        </VerticalStackLayout>
+        
+    </Grid>
 </ContentPage>
