@@ -160,6 +160,41 @@ export async function submitOwnerPoi(body) {
   return apiRequest('/api/v1/owner/pois', { method: 'POST', body });
 }
 
-export async function fetchAdminDevices() {
-  return apiRequest('/api/v1/devices/admin/list');
+<<<<<<< HEAD
+/** @returns {Promise<Array<{ event_family: string, total_events: number }>>} */
+export async function fetchIntelligenceEventsByFamily(start, end, granularity = 'daily') {
+  const q = new URLSearchParams({
+    start,
+    end,
+    granularity: String(granularity),
+  });
+  return apiRequest(`/api/v1/admin/intelligence/metrics/events-by-family?${q}`);
+}
+
+/** @returns {Promise<Array<{ auth_state: string, total_events: number }>>} */
+export async function fetchIntelligenceEventsByAuthState(start, end, granularity = 'daily') {
+  const q = new URLSearchParams({
+    start,
+    end,
+    granularity: String(granularity),
+  });
+  return apiRequest(`/api/v1/admin/intelligence/metrics/events-by-auth-state?${q}`);
+}
+
+/** @returns {Promise<Array<{ bucket_start: string, total_events: number }>>} */
+export async function fetchIntelligenceTimeline(start, end, granularity = 'daily') {
+  const q = new URLSearchParams({
+    start,
+    end,
+    granularity: String(granularity),
+  });
+  return apiRequest(`/api/v1/admin/intelligence/metrics/timeline?${q}`);
+}
+
+/** @returns {Promise<Array<{ date: string, hour: number, total_events: number }>>} */
+export async function fetchIntelligenceHeatmap(start, end) {
+  const q = new URLSearchParams({ start, end });
+  return apiRequest(`/api/v1/admin/intelligence/heatmap?${q}`);
+=======
+
 }

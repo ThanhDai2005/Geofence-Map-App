@@ -20,6 +20,7 @@ export default function DashboardLayout() {
     { to: '/users', label: 'Quản lý Người Dùng' },
     { to: '/devices', label: 'Quản lý Thiết bị' },
     { to: '/audits', label: 'Nhật ký duyệt' },
+    { to: '/intelligence/dashboard', label: 'Intelligence Dashboard' },
   ];
 
   const ownerLinks = [

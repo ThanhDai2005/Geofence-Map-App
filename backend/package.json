@@ -7,7 +7,14 @@
     "start": "node src/server.js",
     "dev": "node src/server.js",
     "seed": "node src/seed.js",
-    "test": "jest --runInBand --forceExit"
+    "db:sync": "node scripts/sync-db-schema.js",
+    "intelligence:rollup-storage": "node scripts/ensure-intelligence-rollup-storage.js",
+    "intelligence:seed-local": "node scripts/seed-intelligence-local.js",
+    "intelligence:seed-minimal-local": "node scripts/seed-intelligence-minimal-local.js",
+    "intelligence:rollup-hourly": "node scripts/run-hourly-rollup.js",
+    "intelligence:rollup-scheduler": "node src/schedulers/intelligence-rollup.scheduler.js",
+    "test": "jest --runInBand --forceExit",
+    "test:rollup": "node scripts/quick-test-rollup.js"
   },
   "keywords": [],
   "author": "",
@@ -19,7 +26,8 @@
     "express": "^5.2.1",
     "joi": "^18.1.2",
     "jsonwebtoken": "^9.0.3",
-    "mongoose": "^9.4.1"
+    "mongoose": "^9.4.1",
+    "node-cron": "^3.0.3"
   },
   "devDependencies": {
     "jest": "^29.7.0",

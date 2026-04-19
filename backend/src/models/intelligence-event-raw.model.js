@@ -48,5 +48,13 @@ intelligenceEventRawSchema.index(
 
 intelligenceEventRawSchema.index({ device_id: 1, timestamp: -1 });
 intelligenceEventRawSchema.index({ correlation_id: 1, runtime_sequence: 1 });
+intelligenceEventRawSchema.index(
+    { created_at: 1, _id: 1 },
+    { name: 'ix_events_raw_created_at_id_rollup' }
+);
+intelligenceEventRawSchema.index(
+    { 'payload.poi_id': 1, created_at: -1 },
+    { sparse: true, name: 'ix_events_raw_poi_id_created_at' }
+);
 
 module.exports = mongoose.model('IntelligenceEventRaw', intelligenceEventRawSchema);
