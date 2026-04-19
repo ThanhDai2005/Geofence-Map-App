@@ -8,6 +8,7 @@ import MasterPoisPage from './pages/MasterPoisPage.jsx';
 import UserManagementPage from './pages/UserManagementPage.jsx';
 import OwnerSubmissionsPage from './pages/OwnerSubmissionsPage.jsx';
 import SubmitPoiPage from './pages/SubmitPoiPage.jsx';
+import IntelligenceDashboard from './pages/intelligence/Dashboard.jsx';
 import DashboardLayout from './components/DashboardLayout.jsx';
 
 function Protected({ children }) {
@@ -86,6 +87,14 @@ export default function App() {
           element={
             <RequireRole allowedRoles={['ADMIN']}>
               <AuditsPage />
+            </RequireRole>
+          }
+        />
+        <Route
+          path="intelligence/dashboard"
+          element={
+            <RequireRole allowedRoles={['ADMIN']}>
+              <IntelligenceDashboard />
             </RequireRole>
           }
         />

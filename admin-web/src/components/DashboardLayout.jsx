@@ -19,6 +19,7 @@ export default function DashboardLayout() {
     { to: '/pending', label: 'Địa Điểm Chờ Duyệt' },
     { to: '/users', label: 'Quản lý Người Dùng' },
     { to: '/audits', label: 'Nhật ký duyệt' },
+    { to: '/intelligence/dashboard', label: 'Intelligence Dashboard' },
   ];
 
   const ownerLinks = [

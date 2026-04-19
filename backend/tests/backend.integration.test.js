@@ -7,6 +7,9 @@ const mongoose = require('mongoose');
 const { seedUsers } = require('./helpers/seedUsers');
 const { login } = require('./helpers/http');
 const AdminPoiAudit = require('../src/models/admin-poi-audit.model');
+const User = require('../src/models/user.model');
+const Poi = require('../src/models/poi.model');
+const IntelligenceEventRaw = require('../src/models/intelligence-event-raw.model');
 
 const app = () => global.__APP__;
 
@@ -400,5 +403,103 @@ describe('7.3.0 — Intelligence ingestion (RBEL)', () => {
             .get('/api/v1/admin/intelligence/summary')
             .set('Authorization', `Bearer ${token}`);
         expect(res.status).toBe(403);
+    });
+
+    it('ADMIN GET metrics timeline returns 200 and a JSON array (rollup-only)', async () => {
+        const token = await login('admin@test.local', 'password123');
+        const res = await request(app())
+            .get('/api/v1/admin/intelligence/metrics/timeline')
+            .query({
+                start: '2026-01-01T00:00:00.000Z',
+                end: '2026-01-07T23:59:59.999Z',
+                granularity: 'daily'
+            })
+            .set('Authorization', `Bearer ${token}`);
+        expect(res.status).toBe(200);
+        expect(Array.isArray(res.body)).toBe(true);
+    });
+
+    it('ADMIN GET heatmap returns JSON array of day/hour buckets', async () => {
+        const token = await login('admin@test.local', 'password123');
+        const res = await request(app())
+            .get('/api/v1/admin/intelligence/heatmap')
+            .query({
+                start: '2026-01-01T00:00:00.000Z',
+                end: '2026-01-07T23:59:59.999Z'
+            })
+            .set('Authorization', `Bearer ${token}`);
+        expect(res.status).toBe(200);
+        expect(Array.isArray(res.body)).toBe(true);
+    });
+
+    it('OWNER GET heatmap without poi_id returns 400', async () => {
+        const token = await login('owner@test.local', 'password123');
+        const res = await request(app())
+            .get('/api/v1/owner/intelligence/heatmap')
+            .set('Authorization', `Bearer ${token}`);
+        expect(res.status).toBe(400);
+    });
+
+    it('OWNER GET heatmap returns 403 for POI not owned by caller', async () => {
+        const admin = await User.findOne({ email: 'admin@test.local' });
+        const poi = await Poi.create({
+            code: `HM-ADM-${Date.now()}`,
+            name: 'Admin-owned POI',
+            location: { type: 'Point', coordinates: [106.7, 10.77] },
+            radius: 50,
+            status: 'PENDING',
+            submittedBy: admin._id
+        });
+        const token = await login('owner@test.local', 'password123');
+        const res = await request(app())
+            .get('/api/v1/owner/intelligence/heatmap')
+            .query({ poi_id: String(poi._id) })
+            .set('Authorization', `Bearer ${token}`);
+        expect(res.status).toBe(403);
+    });
+
+    it('OWNER GET heatmap returns 200 for own POI with raw events', async () => {
+        const ownerTok = await login('owner@test.local', 'password123');
+        const create = await request(app())
+            .post('/api/v1/owner/pois')
+            .set('Authorization', `Bearer ${ownerTok}`)
+            .send({
+                code: `OWN-HM-${Date.now()}`,
+                name: 'Heatmap POI',
+                radius: 50,
+                location: { lat: 10.77, lng: 106.7 }
+            });
+        expect(create.status).toBe(201);
+        const poiId = create.body.data.id;
+        const now = new Date();
+        await IntelligenceEventRaw.create({
+            correlation_id: `corr-hm-${Date.now()}`,
+            device_id: 'device-hm-1',
+            user_id: null,
+            auth_state: 'guest',
+            source_system: 'GAK',
+            event_family: 'LocationEvent',
+            rbel_mapping_version: 'rbel-test',
+            timestamp: now,
+            created_at: now,
+            payload: { poi_id: poiId }
+        });
+        const end = new Date();
+        end.setUTCHours(23, 59, 59, 999);
+        const start = new Date(end);
+        start.setUTCDate(start.getUTCDate() - 6);
+        start.setUTCHours(0, 0, 0, 0);
+        const res = await request(app())
+            .get('/api/v1/owner/intelligence/heatmap')
+            .query({
+                poi_id: poiId,
+                start: start.toISOString(),
+                end: end.toISOString()
+            })
+            .set('Authorization', `Bearer ${ownerTok}`);
+        expect(res.status).toBe(200);
+        expect(Array.isArray(res.body)).toBe(true);
+        const sum = res.body.reduce((acc, row) => acc + (Number(row.total_events) || 0), 0);
+        expect(sum).toBeGreaterThanOrEqual(1);
     });
 });
