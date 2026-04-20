@@ -15,12 +15,15 @@ import {
   YAxis,
 } from 'recharts';
 import {
+  fetchMasterPois,
   fetchIntelligenceEventsByAuthState,
   fetchIntelligenceEventsByFamily,
+  fetchIntelligenceGeoHeatmap,
   fetchIntelligenceHeatmap,
   fetchIntelligenceTimeline,
 } from '../../apiClient.js';
 import Heatmap, { defaultUtcRange7d } from './Heatmap.jsx';
+import GeoHeatmapMap from './GeoHeatmapMap.jsx';
 
 const PIE_COLORS = ['#10b981', '#6366f1', '#f59e0b', '#ec4899', '#64748b'];
 
@@ -48,6 +51,8 @@ export default function IntelligenceDashboard() {
   const [timeline, setTimeline] = useState([]);
   const [byFamily, setByFamily] = useState([]);
   const [byAuth, setByAuth] = useState([]);
+  const [geoHeatmapRows, setGeoHeatmapRows] = useState([]);
+  const [geoFallbackRows, setGeoFallbackRows] = useState([]);
   const [heatmapCells, setHeatmapCells] = useState([]);
   const [heatmapRange, setHeatmapRange] = useState(() => {
     const { start, end } = defaultUtcRange7d();
@@ -68,21 +73,41 @@ export default function IntelligenceDashboard() {
       const hmEndIso = hmEnd.toISOString();
       setHeatmapRange({ startIso: hmStartIso, endIso: hmEndIso });
 
-      const [tl, fam, auth, hm] = await Promise.all([
+      const [tl, fam, auth, geo, hm, masterPois] = await Promise.all([
         fetchIntelligenceTimeline(startIso, endIso, granularity),
         fetchIntelligenceEventsByFamily(startIso, endIso, granularity),
         fetchIntelligenceEventsByAuthState(startIso, endIso, granularity),
+        fetchIntelligenceGeoHeatmap(startIso, endIso),
         fetchIntelligenceHeatmap(hmStartIso, hmEndIso),
+        fetchMasterPois(1, 200),
       ]);
       setTimeline(Array.isArray(tl) ? tl : []);
       setByFamily(Array.isArray(fam) ? fam : []);
       setByAuth(Array.isArray(auth) ? auth : []);
+      setGeoHeatmapRows(Array.isArray(geo) ? geo : []);
       setHeatmapCells(Array.isArray(hm) ? hm : []);
+      const fallback = Array.isArray(masterPois?.items)
+        ? masterPois.items
+            .filter((p) => p?.status === 'APPROVED' && p?.location)
+            .map((p) => ({
+              lat: Number(
+                Array.isArray(p.location?.coordinates) ? p.location.coordinates[1] : p.location?.lat,
+              ),
+              lng: Number(
+                Array.isArray(p.location?.coordinates) ? p.location.coordinates[0] : p.location?.lng,
+              ),
+              total_events: Math.max(1, Number(p.priority) || 1),
+            }))
+            .filter((p) => !Number.isNaN(p.lat) && !Number.isNaN(p.lng))
+        : [];
+      setGeoFallbackRows(fallback);
     } catch (e) {
       setErr(e.message || 'Không thể tải số liệu Intelligence');
       setTimeline([]);
       setByFamily([]);
       setByAuth([]);
+      setGeoHeatmapRows([]);
+      setGeoFallbackRows([]);
       setHeatmapCells([]);
     } finally {
       setLoading(false);
@@ -192,6 +217,23 @@ export default function IntelligenceDashboard() {
       ) : (
         <div className="mt-8 space-y-10">
           <section>
+            <h2 className="text-lg font-medium text-slate-800">Heatmap vị trí khách theo POI</h2>
+            <p className="mt-1 text-sm text-slate-600">
+              Cường độ dựa trên tổng sự kiện vào POI trong khoảng thời gian đang lọc.
+            </p>
+            <div className="mt-3">
+              <GeoHeatmapMap rows={geoHeatmapRows} fallbackRows={geoFallbackRows} />
+            </div>
+          </section>
+
+          <Heatmap
+            cells={heatmapCells}
+            rangeStartIso={heatmapRange.startIso}
+            rangeEndIso={heatmapRange.endIso}
+            subtitle="Nguồn: uis_events_raw (7 ngày UTC gần nhất), không dùng rollup."
+          />
+
+          <section>
             <h2 className="text-lg font-medium text-slate-800">Timeline (tổng sự kiện)</h2>
             <div className="mt-3 h-80 w-full rounded-xl border border-slate-200 bg-white p-4">
               <ResponsiveContainer width="100%" height="100%">
@@ -206,13 +248,6 @@ export default function IntelligenceDashboard() {
               </ResponsiveContainer>
             </div>
           </section>
-
-          <Heatmap
-            cells={heatmapCells}
-            rangeStartIso={heatmapRange.startIso}
-            rangeEndIso={heatmapRange.endIso}
-            subtitle="Nguồn: uis_events_raw (7 ngày UTC gần nhất), không dùng rollup."
-          />
 
           <div className="grid gap-8 lg:grid-cols-2">
             <section>

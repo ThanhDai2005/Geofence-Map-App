@@ -7,8 +7,10 @@ const mongoose = require('mongoose');
 const IntelligenceEventRaw = require('../models/intelligence-event-raw.model');
 const Poi = require('../models/poi.model');
 const { AppError } = require('../middlewares/error.middleware');
+const { POI_STATUS } = require('../constants/poi-status');
 
 const MAX_RANGE_MS = 14 * 24 * 60 * 60 * 1000;
+const OWNER_MAX_RANGE_MS = 366 * 24 * 60 * 60 * 1000;
 const MAX_TIME_MS = 5000;
 
 function defaultUtcDayRange7() {
@@ -24,9 +26,17 @@ function defaultUtcDayRange7() {
  * @param {string|undefined} startStr
  * @param {string|undefined} endStr
  */
-function parseRange(startStr, endStr) {
+function parseRange(startStr, endStr, opts = {}) {
+    const maxRangeMs = opts.maxRangeMs || MAX_RANGE_MS;
+    const defaultDays = Number.isInteger(opts.defaultDays) ? opts.defaultDays : 7;
+
     if (!startStr || !endStr) {
-        return defaultUtcDayRange7();
+        const end = new Date();
+        end.setUTCHours(23, 59, 59, 999);
+        const start = new Date(end);
+        start.setUTCDate(start.getUTCDate() - (defaultDays - 1));
+        start.setUTCHours(0, 0, 0, 0);
+        return { start, end };
     }
     const start = new Date(startStr);
     const end = new Date(endStr);
@@ -36,8 +46,8 @@ function parseRange(startStr, endStr) {
     if (start > end) {
         throw new AppError('start must be before or equal to end', 400);
     }
-    if (end.getTime() - start.getTime() > MAX_RANGE_MS) {
-        throw new AppError('Time range must not exceed 14 days', 400);
+    if (end.getTime() - start.getTime() > maxRangeMs) {
+        throw new AppError(`Time range must not exceed ${Math.floor(maxRangeMs / (24 * 60 * 60 * 1000))} days`, 400);
     }
     return { start, end };
 }
@@ -45,20 +55,28 @@ function parseRange(startStr, endStr) {
 /**
  * @param {Date} rangeStart
  * @param {Date} rangeEnd
- * @param {string|null} poiIdString optional — matches payload.poi_id
+ * @param {string[]|null} poiIdStrings optional — matches payload.poi_id
  * @returns {Promise<Array<{ date: string, hour: number, total_events: number }>>}
  */
-async function aggregateHeatmap(rangeStart, rangeEnd, poiIdString) {
+async function aggregateHeatmap(rangeStart, rangeEnd, poiIdStrings) {
     /** @type {Record<string, unknown>} */
     const match = {
         created_at: { $gte: rangeStart, $lte: rangeEnd }
     };
-    if (poiIdString) {
-        const id = String(poiIdString);
-        const branches = [{ 'payload.poi_id': id }];
-        if (mongoose.Types.ObjectId.isValid(id)) {
-            branches.push({ 'payload.poi_id': new mongoose.Types.ObjectId(id) });
+
+    if (Array.isArray(poiIdStrings) && poiIdStrings.length > 0) {
+        const stringIds = [...new Set(poiIdStrings.map((id) => String(id)))];
+        const objectIds = [];
+        for (const id of stringIds) {
+            if (mongoose.Types.ObjectId.isValid(id)) {
+                objectIds.push(new mongoose.Types.ObjectId(id));
+            }
         }
+        const branches = [{ 'payload.poi_id': { $in: stringIds } }];
+        if (objectIds.length > 0) {
+            branches.push({ 'payload.poi_id': { $in: objectIds } });
+        }
+
         match.$or = branches;
     }
 
@@ -96,7 +114,7 @@ async function aggregateHeatmap(rangeStart, rangeEnd, poiIdString) {
  * @param {{ start?: string, end?: string }} params
  */
 async function getAdminHeatmap(params) {
-    const { start, end } = parseRange(params.start, params.end);
+    const { start, end } = parseRange(params.start, params.end, { maxRangeMs: MAX_RANGE_MS, defaultDays: 7 });
     return aggregateHeatmap(start, end, null);
 }
 
@@ -105,22 +123,45 @@ async function getAdminHeatmap(params) {
  * @param {{ poi_id?: string, start?: string, end?: string }} params
  */
 async function getOwnerHeatmap(userId, params) {
-    const poiId = params.poi_id ?? params.poiId;
-    if (poiId == null || String(poiId).trim() === '') {
-        throw new AppError('Query param poi_id is required', 400);
-    }
-    if (!mongoose.Types.ObjectId.isValid(poiId)) {
+    const rawPoiId = params.poi_id ?? params.poiId;
+    const poiId = rawPoiId == null ? '' : String(rawPoiId).trim();
+
+    if (poiId !== '' && !mongoose.Types.ObjectId.isValid(poiId)) {
         throw new AppError('Invalid poi_id', 400);
     }
-    const poi = await Poi.findById(poiId).select('submittedBy').lean();
-    if (!poi) {
-        throw new AppError('POI not found', 404);
+
+    const baseOwnerFilter = {
+        submittedBy: new mongoose.Types.ObjectId(String(userId)),
+        status: POI_STATUS.APPROVED
+    };
+
+    const ownerFilter = poiId !== ''
+        ? { ...baseOwnerFilter, _id: new mongoose.Types.ObjectId(poiId) }
+        : baseOwnerFilter;
+
+    const ownerPois = await Poi.find(ownerFilter).select('_id').lean();
+
+    if (poiId !== '' && ownerPois.length === 0) {
+        const ownPoi = await Poi.findById(poiId).select('_id submittedBy status').lean();
+        if (!ownPoi) {
+            throw new AppError('POI not found', 404);
+        }
+        if (!ownPoi.submittedBy || String(ownPoi.submittedBy) !== String(userId)) {
+            throw new AppError('You do not have access to this POI', 403);
+        }
+        throw new AppError('POI must be APPROVED to show owner heatmap', 409);
     }
-    if (!poi.submittedBy || String(poi.submittedBy) !== String(userId)) {
-        throw new AppError('You do not have access to this POI', 403);
+
+    if (ownerPois.length === 0) {
+        return [];
     }
-    const { start, end } = parseRange(params.start, params.end);
-    return aggregateHeatmap(start, end, String(poi._id));
+
+    const poiIds = ownerPois.map((p) => String(p._id));
+    const { start, end } = parseRange(params.start, params.end, {
+        maxRangeMs: OWNER_MAX_RANGE_MS,
+        defaultDays: 365
+    });
+    return aggregateHeatmap(start, end, poiIds);
 }
 
 module.exports = {
@@ -129,5 +170,6 @@ module.exports = {
     parseRange,
     defaultUtcDayRange7,
     MAX_RANGE_MS,
+    OWNER_MAX_RANGE_MS,
     MAX_TIME_MS
 };

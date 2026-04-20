@@ -41,3 +41,16 @@ exports.getTimeline = async (req, res, next) => {
         next(e);
     }
 };
+
+exports.getGeoHeatmap = async (req, res, next) => {
+    try {
+        const { start, end } = req.query;
+        const rows = await intelligenceMetricsService.getGeoHeatmap({
+            start,
+            end
+        });
+        res.status(200).json(rows);
+    } catch (e) {
+        next(e);
+    }
+};

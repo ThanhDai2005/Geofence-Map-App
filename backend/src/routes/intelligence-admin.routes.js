@@ -16,6 +16,7 @@ router.get('/journeys/:correlationId', intelligenceController.getJourney);
 router.get('/metrics/events-by-family', intelligenceMetricsController.getEventsByFamily);
 router.get('/metrics/events-by-auth-state', intelligenceMetricsController.getEventsByAuthState);
 router.get('/metrics/timeline', intelligenceMetricsController.getTimeline);
+router.get('/metrics/geo-heatmap', intelligenceMetricsController.getGeoHeatmap);
 router.get('/heatmap', intelligenceHeatmapController.getAdminHeatmap);
 
 module.exports = router;

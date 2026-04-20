@@ -1,4 +1,4 @@
-const TOKEN_KEY = 'vngo_admin_jwt';
+const TOKEN_KEY = "vngo_admin_jwt";
 
 export function getStoredToken() {
   return localStorage.getItem(TOKEN_KEY);
@@ -11,18 +11,18 @@ export function setStoredToken(token) {
 
 function apiBase() {
   const b = import.meta.env.VITE_API_BASE;
-  return b && String(b).trim() ? String(b).replace(/\/$/, '') : '';
+  return b && String(b).trim() ? String(b).replace(/\/$/, "") : "";
 }
 
-export async function apiRequest(path, { method = 'GET', body, token } = {}) {
+export async function apiRequest(path, { method = "GET", body, token } = {}) {
   const base = apiBase();
-  const url = `${base}${path.startsWith('/') ? path : `/${path}`}`;
+  const url = `${base}${path.startsWith("/") ? path : `/${path}`}`;
   const headers = {
-    Accept: 'application/json',
+    Accept: "application/json",
   };
   const t = token ?? getStoredToken();
   if (t) headers.Authorization = `Bearer ${t}`;
-  if (body !== undefined) headers['Content-Type'] = 'application/json';
+  if (body !== undefined) headers["Content-Type"] = "application/json";
 
   const res = await fetch(url, {
     method,
@@ -39,10 +39,7 @@ export async function apiRequest(path, { method = 'GET', body, token } = {}) {
   }
 
   if (!res.ok) {
-    const msg =
-      json?.error?.message ||
-      json?.message ||
-      `HTTP ${res.status}`;
+    const msg = json?.error?.message || json?.message || `HTTP ${res.status}`;
     const err = new Error(msg);
     err.status = res.status;
     err.payload = json;
@@ -53,26 +50,26 @@ export async function apiRequest(path, { method = 'GET', body, token } = {}) {
 }
 
 export async function login(email, password) {
-  return apiRequest('/api/v1/auth/login', {
-    method: 'POST',
+  return apiRequest("/api/v1/auth/login", {
+    method: "POST",
     body: { email, password },
     token: null,
   });
 }
 
 export async function fetchPendingPois() {
-  return apiRequest('/api/v1/admin/pois/pending');
+  return apiRequest("/api/v1/admin/pois/pending");
 }
 
 export async function approvePoi(id) {
   return apiRequest(`/api/v1/admin/pois/${encodeURIComponent(id)}/approve`, {
-    method: 'POST',
+    method: "POST",
   });
 }
 
 export async function rejectPoi(id, reason) {
   return apiRequest(`/api/v1/admin/pois/${encodeURIComponent(id)}/reject`, {
-    method: 'POST',
+    method: "POST",
     body: { reason },
   });
 }
@@ -107,48 +104,52 @@ export async function deletePoiByCode(code) {
 
 /** Short-lived scan JWT + full URL for QR (ADMIN). */
 export async function fetchPoiQrToken(poiId) {
-  return apiRequest(
-    `/api/v1/admin/pois/${encodeURIComponent(poiId)}/qr-token`,
-  );
+  return apiRequest(`/api/v1/admin/pois/${encodeURIComponent(poiId)}/qr-token`);
 }
 
 export async function fetchAdminUsers() {
-  return apiRequest('/api/v1/admin/users');
+  return apiRequest("/api/v1/admin/users");
 }
 
 export async function createAdminUser(body) {
-  return apiRequest('/api/v1/admin/users', {
-    method: 'POST',
+  return apiRequest("/api/v1/admin/users", {
+    method: "POST",
     body,
   });
 }
 
 export async function updateAdminUser(userId, body) {
   return apiRequest(`/api/v1/admin/users/${encodeURIComponent(userId)}`, {
-    method: 'PUT',
+    method: "PUT",
     body,
   });
 }
 
 export async function updateUserRole(userId, role) {
   return apiRequest(`/api/v1/admin/users/${encodeURIComponent(userId)}/role`, {
-    method: 'PUT',
+    method: "PUT",
     body: { role },
   });
 }
 
 export async function updateUserPremium(userId, isPremium) {
-  return apiRequest(`/api/v1/admin/users/${encodeURIComponent(userId)}/premium`, {
-    method: 'PUT',
-    body: { isPremium },
-  });
+  return apiRequest(
+    `/api/v1/admin/users/${encodeURIComponent(userId)}/premium`,
+    {
+      method: "PUT",
+      body: { isPremium },
+    },
+  );
 }
 
 export async function updateUserStatus(userId, isActive) {
-  return apiRequest(`/api/v1/admin/users/${encodeURIComponent(userId)}/status`, {
-    method: 'PUT',
-    body: { isActive },
-  });
+  return apiRequest(
+    `/api/v1/admin/users/${encodeURIComponent(userId)}/status`,
+    {
+      method: "PUT",
+      body: { isActive },
+    },
+  );
 }
 
 export async function fetchOwnerSubmissions(page = 1, limit = 50) {
@@ -157,12 +158,15 @@ export async function fetchOwnerSubmissions(page = 1, limit = 50) {
 }
 
 export async function submitOwnerPoi(body) {
-  return apiRequest('/api/v1/owner/pois', { method: 'POST', body });
+  return apiRequest("/api/v1/owner/pois", { method: "POST", body });
 }
 
-<<<<<<< HEAD
 /** @returns {Promise<Array<{ event_family: string, total_events: number }>>} */
-export async function fetchIntelligenceEventsByFamily(start, end, granularity = 'daily') {
+export async function fetchIntelligenceEventsByFamily(
+  start,
+  end,
+  granularity = "daily",
+) {
   const q = new URLSearchParams({
     start,
     end,
@@ -172,17 +176,27 @@ export async function fetchIntelligenceEventsByFamily(start, end, granularity = 
 }
 
 /** @returns {Promise<Array<{ auth_state: string, total_events: number }>>} */
-export async function fetchIntelligenceEventsByAuthState(start, end, granularity = 'daily') {
+export async function fetchIntelligenceEventsByAuthState(
+  start,
+  end,
+  granularity = "daily",
+) {
   const q = new URLSearchParams({
     start,
     end,
     granularity: String(granularity),
   });
-  return apiRequest(`/api/v1/admin/intelligence/metrics/events-by-auth-state?${q}`);
+  return apiRequest(
+    `/api/v1/admin/intelligence/metrics/events-by-auth-state?${q}`,
+  );
 }
 
 /** @returns {Promise<Array<{ bucket_start: string, total_events: number }>>} */
-export async function fetchIntelligenceTimeline(start, end, granularity = 'daily') {
+export async function fetchIntelligenceTimeline(
+  start,
+  end,
+  granularity = "daily",
+) {
   const q = new URLSearchParams({
     start,
     end,
@@ -191,10 +205,26 @@ export async function fetchIntelligenceTimeline(start, end, granularity = 'daily
   return apiRequest(`/api/v1/admin/intelligence/metrics/timeline?${q}`);
 }
 
+/** @returns {Promise<Array<{ poi_id: string, code: string, name: string, lat: number, lng: number, total_events: number }>>} */
+export async function fetchIntelligenceGeoHeatmap(start, end) {
+  const q = new URLSearchParams({ start, end });
+  return apiRequest(`/api/v1/admin/intelligence/metrics/geo-heatmap?${q}`);
+}
+
 /** @returns {Promise<Array<{ date: string, hour: number, total_events: number }>>} */
 export async function fetchIntelligenceHeatmap(start, end) {
   const q = new URLSearchParams({ start, end });
   return apiRequest(`/api/v1/admin/intelligence/heatmap?${q}`);
-=======
+}
 
+/** Owner heatmap: APPROVED POIs submitted by current owner only. */
+export async function fetchOwnerIntelligenceHeatmap(start, end, poiId) {
+  const q = new URLSearchParams({ start, end });
+  if (poiId) q.set('poi_id', String(poiId));
+  return apiRequest(`/api/v1/owner/intelligence/heatmap?${q}`);
+}
+
+/** Device sessions for admin dashboard (online/offline, IP, user). */
+export async function fetchAdminDevices() {
+  return apiRequest("/api/v1/devices/admin/list");
 }
