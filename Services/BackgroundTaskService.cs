@@ -133,6 +133,7 @@ public class BackgroundTaskService
         await Task.CompletedTask;
         return;
 
+#pragma warning disable CS0162 // Unreachable code detected
         while (!ct.IsCancellationRequested)
         {
             try
@@ -157,11 +158,8 @@ public class BackgroundTaskService
 
                 Debug.WriteLine($"[BACK-SVC] Preloading {target.Code} to {lang}...");
 
-                _logger.LogInformation(
-                    "[TranslationTrigger] Source={Source} | PoiId={PoiId} | Lang={Lang}",
-                    "BackgroundPreload",
-                    target.Code,
-                    lang);
+                Debug.WriteLine(
+                    $"[TranslationTrigger] Source=BackgroundPreload | PoiId={target.Code} | Lang={lang}");
 
                 var translatedPoi = await _poiTranslationService.GetOrTranslateAsync(target.Code, lang, ct);
 
@@ -191,6 +189,7 @@ public class BackgroundTaskService
                 await Task.Delay(5000, ct);
             }
         }
+#pragma warning restore CS0162 // Unreachable code detected
     }
 
     private static Poi CreateHydratedPoi(Poi core, LocalizationResult result)

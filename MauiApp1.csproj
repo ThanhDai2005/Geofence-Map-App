@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
 		<TargetFrameworks>net10.0-android;net10.0-ios;net10.0-maccatalyst</TargetFrameworks>
@@ -19,7 +19,7 @@
 		<Nullable>enable</Nullable>
 
 		<!-- Display name -->
-<ApplicationTitle>VN GO Travel</ApplicationTitle>
+		<ApplicationTitle>VN GO Travel</ApplicationTitle>
 
 		<!-- App Identifier -->
 		<ApplicationId>com.companyname.mauiapp1</ApplicationId>
@@ -40,7 +40,7 @@
 
 	<ItemGroup>
 		<!-- App Icon -->
-<MauiIcon Include="Resources\AppIcon\appicon.png" />
+		<MauiIcon Include="Resources\AppIcon\appicon.png" />
 
 		<!-- Splash Screen -->
 		<MauiSplashScreen Include="Resources\Splash\splash.svg" Color="#512BD4" BaseSize="128,128" />
@@ -48,7 +48,7 @@
 		<!-- Images -->
 		<MauiImage Include="Resources\Images\*" />
 		<MauiImage Update="Resources\Images\dotnet_bot.png" Resize="True" BaseSize="300,185" />
-		
+
 		<!-- Custom Fonts -->
 		<MauiFont Include="Resources\Fonts\*" />
 
@@ -73,38 +73,72 @@
 	</ItemGroup>
 
 	<ItemGroup>
-	  <MauiXaml Update="Views\AboutPage.xaml">
-	    <Generator>MSBuild:Compile</Generator>
-	  </MauiXaml>
-	  <MauiXaml Update="Views\ExplorePage.xaml">
-	    <Generator>MSBuild:Compile</Generator>
-	  </MauiXaml>
-	  <MauiXaml Update="Views\MapPage.xaml">
-	    <Generator>MSBuild:Compile</Generator>
-	  </MauiXaml>
-	  <MauiXaml Update="Views\PoiDetailPage.xaml">
-	    <Generator>MSBuild:Compile</Generator>
-	  </MauiXaml>
-	  <MauiXaml Update="Views\QrScannerPage.xaml">
-	    <Generator>MSBuild:Compile</Generator>
-	  </MauiXaml>
-	  <MauiXaml Update="Views\LoginPage.xaml">
-	    <Generator>MSBuild:Compile</Generator>
-	  </MauiXaml>
-	  <MauiXaml Update="Views\ProfilePage.xaml">
-	    <Generator>MSBuild:Compile</Generator>
-	  </MauiXaml>
-	  <MauiXaml Update="Views\AdminToolsPage.xaml">
-	    <Generator>MSBuild:Compile</Generator>
-	  </MauiXaml>
-	  <MauiXaml Update="Views\AuthStartupPage.xaml">
-	    <Generator>MSBuild:Compile</Generator>
-	  </MauiXaml>
+		<MauiXaml Update="Views\AboutPage.xaml">
+			<Generator>MSBuild:Compile</Generator>
+		</MauiXaml>
+		<MauiXaml Update="Views\ExplorePage.xaml">
+			<Generator>MSBuild:Compile</Generator>
+		</MauiXaml>
+		<MauiXaml Update="Views\MapPage.xaml">
+			<Generator>MSBuild:Compile</Generator>
+		</MauiXaml>
+		<MauiXaml Update="Views\PoiDetailPage.xaml">
+			<Generator>MSBuild:Compile</Generator>
+		</MauiXaml>
+		<MauiXaml Update="Views\QrScannerPage.xaml">
+			<Generator>MSBuild:Compile</Generator>
+		</MauiXaml>
+		<MauiXaml Update="Views\LoginPage.xaml">
+			<Generator>MSBuild:Compile</Generator>
+		</MauiXaml>
+		<MauiXaml Update="Views\ProfilePage.xaml">
+			<Generator>MSBuild:Compile</Generator>
+		</MauiXaml>
+		<MauiXaml Update="Views\AdminToolsPage.xaml">
+			<Generator>MSBuild:Compile</Generator>
+		</MauiXaml>
+		<MauiXaml Update="Views\AuthStartupPage.xaml">
+			<Generator>MSBuild:Compile</Generator>
+		</MauiXaml>
 	</ItemGroup>
 
 	<ItemGroup>
-	  <Folder Include="Microsoft\Maui\Maps\" />
+		<Folder Include="Microsoft\Maui\Maps\" />
 	</ItemGroup>
 
-<!-- Exclude the AdminWeb (ASP.NET Core MVC) project from MAUI compilation globs -->
+	<!-- Exclude sub-project folders from MAUI compilation globs.
+     These are referenced as ProjectReferences and must NOT be compiled as source by MauiApp1. -->
+	<ItemGroup>
+		<Compile Remove="ContractObservability\**" />
+		<Compile Remove="Contracts.Generated\**" />
+		<Compile Remove="ContractSourceGenerator\**" />
+		<Compile Remove="ContractDefinition\**" />
+		<Compile Remove="TranslationEvents.Api\**" />
+		<Compile Remove="SchemaDiffChecker\**" />
+		<Compile Remove="tools\**" />
+
+		<None Remove="ContractObservability\**" />
+		<None Remove="Contracts.Generated\**" />
+		<None Remove="ContractSourceGenerator\**" />
+		<None Remove="ContractDefinition\**" />
+		<None Remove="TranslationEvents.Api\**" />
+		<None Remove="SchemaDiffChecker\**" />
+		<None Remove="tools\**" />
+
+		<Content Remove="ContractObservability\**" />
+		<Content Remove="Contracts.Generated\**" />
+		<Content Remove="ContractSourceGenerator\**" />
+		<Content Remove="ContractDefinition\**" />
+		<Content Remove="TranslationEvents.Api\**" />
+		<Content Remove="SchemaDiffChecker\**" />
+		<Content Remove="tools\**" />
+
+		<EmbeddedResource Remove="ContractObservability\**" />
+		<EmbeddedResource Remove="Contracts.Generated\**" />
+		<EmbeddedResource Remove="ContractSourceGenerator\**" />
+		<EmbeddedResource Remove="ContractDefinition\**" />
+		<EmbeddedResource Remove="TranslationEvents.Api\**" />
+		<EmbeddedResource Remove="SchemaDiffChecker\**" />
+		<EmbeddedResource Remove="tools\**" />
+	</ItemGroup>
 </Project>

@@ -4,7 +4,7 @@
  */
 
 const mongoose = require('mongoose');
-const IntelligenceEventRaw = require('../models/intelligence-event-raw.model');
+const PoiHourlyStats = require('../models/poi-hourly-stats.model');
 const Poi = require('../models/poi.model');
 const { AppError } = require('../middlewares/error.middleware');
 const { POI_STATUS } = require('../constants/poi-status');
@@ -55,59 +55,41 @@ function parseRange(startStr, endStr, opts = {}) {
 /**
  * @param {Date} rangeStart
  * @param {Date} rangeEnd
- * @param {string[]|null} poiIdStrings optional — matches payload.poi_id
- * @returns {Promise<Array<{ date: string, hour: number, total_events: number }>>}
+ * @param {string[]|null} poiIdStrings optional — matches poi_id
+ * @returns {Promise<Array<{ date: string, hour: number, total_unique_visitors: number }>>}
  */
 async function aggregateHeatmap(rangeStart, rangeEnd, poiIdStrings) {
     /** @type {Record<string, unknown>} */
     const match = {
-        created_at: { $gte: rangeStart, $lte: rangeEnd }
+        hour_bucket: { $gte: rangeStart, $lte: rangeEnd }
     };
 
     if (Array.isArray(poiIdStrings) && poiIdStrings.length > 0) {
-        const stringIds = [...new Set(poiIdStrings.map((id) => String(id)))];
-        const objectIds = [];
-        for (const id of stringIds) {
-            if (mongoose.Types.ObjectId.isValid(id)) {
-                objectIds.push(new mongoose.Types.ObjectId(id));
-            }
-        }
-        const branches = [{ 'payload.poi_id': { $in: stringIds } }];
-        if (objectIds.length > 0) {
-            branches.push({ 'payload.poi_id': { $in: objectIds } });
-        }
-
-        match.$or = branches;
+        match.poi_id = { $in: poiIdStrings.map(String) };
     }
 
     const pipeline = [
         { $match: match },
         {
-            $addFields: {
-                date: {
-                    $dateToString: { format: '%Y-%m-%d', date: '$created_at', timezone: 'UTC' }
-                },
-                hour: { $hour: { date: '$created_at', timezone: 'UTC' } }
-            }
-        },
-        {
             $group: {
-                _id: { date: '$date', hour: '$hour' },
-                total_events: { $sum: 1 }
+                _id: '$hour_bucket',
+                total_unique_visitors: { $sum: '$total_unique_visitors' }
             }
         },
         {
             $project: {
                 _id: 0,
-                date: '$_id.date',
-                hour: '$_id.hour',
-                total_events: 1
+                date: {
+                    $dateToString: { format: '%Y-%m-%d', date: '$_id', timezone: 'UTC' }
+                },
+                hour: { $hour: { date: '$_id', timezone: 'UTC' } },
+                total_unique_visitors: 1
             }
         },
         { $sort: { date: 1, hour: 1 } }
     ];
 
-    return IntelligenceEventRaw.aggregate(pipeline).option({ maxTimeMS: MAX_TIME_MS });
+    return PoiHourlyStats.aggregate(pipeline).option({ maxTimeMS: MAX_TIME_MS });
 }
 
 /**

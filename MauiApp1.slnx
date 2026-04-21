@@ -1,3 +1,7 @@
 <Solution>
+  <Project Path="ContractDefinition/ContractDefinition.csproj" />
+  <Project Path="ContractObservability/ContractObservability.csproj" />
+  <Project Path="Contracts.Generated/Contracts.Generated.csproj" />
+  <Project Path="ContractSourceGenerator/ContractSourceGenerator.csproj" />
   <Project Path="MauiApp1.csproj" />
 </Solution>

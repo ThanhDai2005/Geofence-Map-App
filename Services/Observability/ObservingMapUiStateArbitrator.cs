@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Concurrent;
 using MauiApp1.Models;
 using MauiApp1.Services;
 using MauiApp1.Services.MapUi;
@@ -21,8 +23,28 @@ public sealed class ObservingMapUiStateArbitrator : IMapUiStateArbitrator
         _appState = appState;
     }
 
+    private readonly ConcurrentDictionary<string, DateTime> _poiCooldownMap = new();
+
     public async Task ApplySelectedPoiAsync(MapUiSelectionSource source, Poi? poi, CancellationToken cancellationToken = default)
     {
+        if (poi != null && !string.IsNullOrEmpty(poi.Id))
+        {
+            var poiId = poi.Id;
+            var nowUtc = DateTime.UtcNow;
+
+            if (_poiCooldownMap.TryGetValue(poiId, out var lastTime))
+            {
+                if ((nowUtc - lastTime) < TimeSpan.FromMinutes(5))
+                {
+                    System.Diagnostics.Debug.WriteLine($"[TelemetryDedup] BLOCKED duplicate POI entry: {poiId}");
+                    return;
+                }
+            }
+
+            _poiCooldownMap[poiId] = nowUtc;
+            System.Diagnostics.Debug.WriteLine($"[TelemetryDedup] ACCEPTED POI entry: {poiId}");
+        }
+
         var before = _appState.SelectedPoi?.Code;
         var t0 = DateTime.UtcNow.Ticks;
         _telemetry.TryEnqueue(new RuntimeTelemetryEvent(

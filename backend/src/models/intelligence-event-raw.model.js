@@ -24,7 +24,8 @@ const intelligenceEventRawSchema = new mongoose.Schema({
     rbel_mapping_version: { type: String, required: true },
     timestamp: { type: Date, required: true },
     created_at: { type: Date, default: () => new Date() },
-    ingestion_request_id: { type: String, default: null }
+    ingestion_request_id: { type: String, default: null },
+    event_hash: { type: String, required: true, unique: true }
 }, {
     collection: 'uis_events_raw',
     timestamps: false

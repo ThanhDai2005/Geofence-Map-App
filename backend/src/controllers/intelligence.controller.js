@@ -4,6 +4,12 @@ exports.postBatch = async (req, res, next) => {
     try {
         const headerDeviceId = req.headers['x-device-id'] || null;
         const result = await intelligenceEventsService.ingestBatch(req.body, req.user, {
+            debugInfo: (() => {
+                console.log("=== BẮT ĐẦU PAYLOAD TỪ MAUI ===");
+                console.log(JSON.stringify(req.body, null, 2));
+                console.log("=================================");
+                return "logged";
+            })(),
             headerDeviceId
         });
         res.status(200).json(result);

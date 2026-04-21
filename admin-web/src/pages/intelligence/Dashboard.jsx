@@ -90,13 +90,31 @@ export default function IntelligenceDashboard() {
       const hmEndIso = hmEnd.toISOString();
       setHeatmapRange({ startIso: hmStartIso, endIso: hmEndIso });
 
+      const withGuard = async (p, fallback = []) => {
+        try {
+          // ⚙️ IMPLEMENTATION PART 4 — TIMEOUT PROTECTION + ⚙️ IMPLEMENTATION PART 1 — API FAIL-SAFE
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+          const res = await Promise.race([
+            p,
+            new Promise((_, rej) => setTimeout(() => reject(new Error("Timeout or API Failed")), 5000))
+          ]);
+          clearTimeout(timeoutId);
+          return res;
+        } catch (err) {
+          console.error("[Heatmap] API failed", err.message);
+          return fallback;
+        }
+      };
+
       const [tl, fam, auth, geo, hm, masterPois] = await Promise.all([
-        fetchIntelligenceTimeline(startIso, endIso, granularity),
-        fetchIntelligenceEventsByFamily(startIso, endIso, granularity),
-        fetchIntelligenceEventsByAuthState(startIso, endIso, granularity),
-        fetchIntelligenceGeoHeatmap(startIso, endIso),
-        fetchIntelligenceHeatmap(hmStartIso, hmEndIso),
-        fetchMasterPois(1, 200),
+        withGuard(fetchIntelligenceTimeline(startIso, endIso, granularity), []),
+        withGuard(fetchIntelligenceEventsByFamily(startIso, endIso, granularity), []),
+        withGuard(fetchIntelligenceEventsByAuthState(startIso, endIso, granularity), []),
+        withGuard(fetchIntelligenceGeoHeatmap(startIso, endIso), []),
+        withGuard(fetchIntelligenceHeatmap(hmStartIso, hmEndIso), []),
+        withGuard(fetchMasterPois(1, 200), { data: [], items: [] }),
       ]);
       setTimeline(Array.isArray(tl) ? tl : []);
       setByFamily(Array.isArray(fam) ? fam : []);
@@ -242,7 +260,7 @@ export default function IntelligenceDashboard() {
           <section>
             <h2 className="text-lg font-medium text-slate-800">Heatmap vị trí khách theo POI</h2>
             <div className="mt-3">
-              <GeoHeatmapMap rows={geoHeatmapRows} fallbackRows={geoFallbackRows} />
+              <GeoHeatmapMap rows={geoHeatmapRows} fallbackRows={geoFallbackRows} isLoading={loading} />
             </div>
           </section>
 

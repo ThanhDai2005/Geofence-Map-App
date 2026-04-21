@@ -31,8 +31,8 @@ namespace MauiApp1
 
             if (intent != null)
             {
-                // Android 15+ binding requires ComponentCaller; pass null when not available.
-                SetIntent(intent, null);
+                // Use the Intent property setter to avoid the Android 15 ComponentCaller overload on older devices
+                Intent = intent;
                 global::System.Diagnostics.Debug.WriteLine("[DL-ACT] SetIntent updated with new VIEW intent");
                 Log.Debug(Tag, "SetIntent updated with new intent");
             }

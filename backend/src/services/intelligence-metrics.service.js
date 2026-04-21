@@ -7,12 +7,40 @@ const { AppError } = require('../middlewares/error.middleware');
 const IntelligenceAnalyticsRollupHourly = require('../models/intelligence-analytics-rollup-hourly.model');
 const IntelligenceAnalyticsRollupDaily = require('../models/intelligence-analytics-rollup-daily.model');
 const IntelligenceEventRaw = require('../models/intelligence-event-raw.model');
+const PoiHourlyStats = require('../models/poi-hourly-stats.model');
 const Poi = require('../models/poi.model');
 const { POI_STATUS } = require('../constants/poi-status');
 
 /** Metrics API: max window between start and end (inclusive span). */
 const MAX_RANGE_MS = 90 * 24 * 60 * 60 * 1000;
 const MAX_TIME_MS = 2000;
+
+// ⚙️ IMPLEMENTATION PART 3 — CONFIGURABLE THRESHOLDS
+const LOW_THRESHOLD = 10;
+const HIGH_THRESHOLD = 30;
+
+/**
+ * ⚙️ IMPLEMENTATION PART 1 — SIMPLE PREDICTION MODEL
+ * Simple moving average using last 3 values.
+ * @param {number[]} values 
+ */
+function predictNext(values) {
+    if (!Array.isArray(values) || values.length === 0) return 0;
+    if (values.length < 3) return values[values.length - 1];
+
+    const last3 = values.slice(-3);
+    return last3.reduce((a, b) => a + b, 0) / 3;
+}
+
+/**
+ * ⚙️ IMPLEMENTATION PART 3 — CLASSIFICATION
+ * @param {number} value 
+ */
+function classifyTraffic(value) {
+    if (value < LOW_THRESHOLD) return 'LOW';
+    if (value < HIGH_THRESHOLD) return 'MEDIUM';
+    return 'HIGH';
+}
 
 function parseIsoRange(startStr, endStr) {
     if (!startStr || !endStr) {
@@ -160,276 +188,70 @@ module.exports = {
     async getGeoHeatmap(params) {
         const { start, end } = parseIsoRange(params.start, params.end);
 
-        const grouped = await IntelligenceEventRaw.aggregate([
+        // ⚙️ IMPLEMENTATION PART 2 — DATA PREPARATION (from PoiHourlyStats)
+        // Step 1: Aggregate range totals from PoiHourlyStats instead of raw events for efficiency
+        const statsAggregation = await PoiHourlyStats.aggregate([
             {
                 $match: {
-                    created_at: { $gte: start, $lte: end }
-                }
-            },
-            {
-                $project: {
-                    poi_id_raw: {
-                        $ifNull: [
-                            '$payload.poi_id',
-                            {
-                                $ifNull: [
-                                    '$payload.poiId',
-                                    {
-                                        $ifNull: [
-                                            '$payload.poi.id',
-                                            { $ifNull: ['$payload.poi._id', null] }
-                                        ]
-                                    }
-                                ]
-                            }
-                        ]
-                    },
-                    poi_code_raw: {
-                        $ifNull: [
-                            '$payload.poi_code',
-                            {
-                                $ifNull: [
-                                    '$payload.poiCode',
-                                    {
-                                        $ifNull: [
-                                            '$payload.code',
-                                            { $ifNull: ['$payload.poi.code', null] }
-                                        ]
-                                    }
-                                ]
-                            }
-                        ]
-                    },
-                    lat_raw: {
-                        $ifNull: [
-                            '$payload.lat',
-                            {
-                                $ifNull: [
-                                    '$payload.latitude',
-                                    {
-                                        $ifNull: [
-                                            '$payload.location.lat',
-                                            {
-                                                $ifNull: [
-                                                    '$payload.location.latitude',
-                                                    {
-                                                        $ifNull: [
-                                                            '$payload.location.coordinates.1',
-                                                            {
-                                                                $ifNull: [
-                                                                    '$payload.coordinates.1',
-                                                                    {
-                                                                        $ifNull: [
-                                                                            '$payload.geo.lat',
-                                                                            '$payload.geo.latitude'
-                                                                        ]
-                                                                    }
-                                                                ]
-                                                            }
-                                                        ]
-                                                    }
-                                                ]
-                                            }
-                                        ]
-                                    }
-                                ]
-                            }
-                        ]
-                    },
-                    lng_raw: {
-                        $ifNull: [
-                            '$payload.lng',
-                            {
-                                $ifNull: [
-                                    '$payload.longitude',
-                                    {
-                                        $ifNull: [
-                                            '$payload.location.lng',
-                                            {
-                                                $ifNull: [
-                                                    '$payload.location.longitude',
-                                                    {
-                                                        $ifNull: [
-                                                            '$payload.location.coordinates.0',
-                                                            {
-                                                                $ifNull: [
-                                                                    '$payload.coordinates.0',
-                                                                    {
-                                                                        $ifNull: [
-                                                                            '$payload.geo.lng',
-                                                                            '$payload.geo.longitude'
-                                                                        ]
-                                                                    }
-                                                                ]
-                                                            }
-                                                        ]
-                                                    }
-                                                ]
-                                            }
-                                        ]
-                                    }
-                                ]
-                            }
-                        ]
-                    }
-                }
-            },
-            {
-                $match: {
-                    $or: [
-                        { poi_id_raw: { $exists: true, $ne: null } },
-                        { poi_code_raw: { $exists: true, $ne: null } },
-                        {
-                            $and: [
-                                { lat_raw: { $exists: true, $ne: null } },
-                                { lng_raw: { $exists: true, $ne: null } }
-                            ]
-                        }
-                    ]
-                }
-            },
-            {
-                $project: {
-                    poi_id: {
-                        $cond: [
-                            { $ne: ['$poi_id_raw', null] },
-                            { $toString: '$poi_id_raw' },
-                            null
-                        ]
-                    },
-                    poi_code: {
-                        $cond: [
-                            { $ne: ['$poi_code_raw', null] },
-                            { $toString: '$poi_code_raw' },
-                            null
-                        ]
-                    },
-                    lat: {
-                        $convert: {
-                            input: '$lat_raw',
-                            to: 'double',
-                            onError: null,
-                            onNull: null
-                        }
-                    },
-                    lng: {
-                        $convert: {
-                            input: '$lng_raw',
-                            to: 'double',
-                            onError: null,
-                            onNull: null
-                        }
-                    }
-                }
-            },
-            {
-                $match: {
-                    $or: [
-                        { poi_id: { $nin: [null, '', 'null', 'undefined'] } },
-                        { poi_code: { $nin: [null, '', 'null', 'undefined'] } },
-                        {
-                            $and: [
-                                { lat: { $ne: null } },
-                                { lng: { $ne: null } }
-                            ]
-                        }
-                    ]
+                    hour_bucket: { $gte: start, $lte: end }
                 }
             },
             {
                 $group: {
-                    _id: {
-                        poi_id: '$poi_id',
-                        poi_code: '$poi_code',
-                        lat: '$lat',
-                        lng: '$lng'
-                    },
-                    total_events: { $sum: 1 }
+                    _id: '$poi_id',
+                    total_visitors: { $sum: '$total_unique_visitors' }
                 }
-            },
-            {
-                $project: {
-                    _id: 0,
-                    poi_id: '$_id.poi_id',
-                    poi_code: '$_id.poi_code',
-                    lat: '$_id.lat',
-                    lng: '$_id.lng',
-                    total_events: 1
-                }
-            },
-            { $sort: { total_events: -1 } }
+            }
         ]).option({ maxTimeMS: MAX_TIME_MS });
 
-        if (!Array.isArray(grouped) || grouped.length === 0) {
-            return [];
+        const visitorsByPoi = new Map(statsAggregation.map(s => [String(s._id), s.total_visitors]));
+
+        // Step 2: Fetch recent history for prediction (last 3-4 hours)
+        const predictionWindowStart = new Date(Date.now() - 6 * 3600000);
+        const historyStats = await PoiHourlyStats.find({
+            hour_bucket: { $gte: predictionWindowStart }
+        }).sort({ poi_id: 1, hour_bucket: 1 }).lean();
+
+        const historyByPoi = new Map();
+        for (const s of historyStats) {
+            const pid = String(s.poi_id);
+            if (!historyByPoi.has(pid)) historyByPoi.set(pid, []);
+            historyByPoi.get(pid).push(s.total_unique_visitors);
         }
 
-        const poiIds = grouped
-            .map((x) => x.poi_id)
-            .filter((id) => typeof id === 'string' && id.length === 24);
-        const poiCodes = grouped
-            .map((x) => (x.poi_code ? String(x.poi_code).trim() : ''))
-            .filter((c) => c.length > 0);
+        // Step 3: Fetch POI details
+        const pois = await Poi.find({
+            $or: [
+                { status: POI_STATUS.APPROVED },
+                { status: { $exists: false } }
+            ]
+        }).select('_id code name location').lean();
 
-        const hasPoiRefs = poiIds.length > 0 || poiCodes.length > 0;
-        const pois = hasPoiRefs
-            ? await Poi.find({
-                $and: [
-                    {
-                        $or: [
-                            ...(poiIds.length > 0 ? [{ _id: { $in: poiIds } }] : []),
-                            ...(poiCodes.length > 0 ? [{ code: { $in: poiCodes } }] : [])
-                        ]
-                    },
-                    {
-                        $or: [
-                            { status: POI_STATUS.APPROVED },
-                            { status: { $exists: false } }
-                        ]
-                    }
-                ]
-            })
-                .select('_id code name location')
-                .lean()
-            : [];
+        // ⚙️ IMPLEMENTATION PART 4 — API RESPONSE EXTENSION
+        return pois
+            .map((poi) => {
+                const poiId = String(poi._id);
+                if (!poi.location || !Array.isArray(poi.location.coordinates)) return null;
 
-        const poiById = new Map(pois.map((p) => [String(p._id), p]));
-        const poiByCode = new Map(pois.map((p) => [String(p.code || '').trim(), p]));
-
-        return grouped
-            .map((item) => {
-                const poiFromId = item.poi_id ? poiById.get(String(item.poi_id)) : null;
-                const poiFromCode = item.poi_code ? poiByCode.get(String(item.poi_code).trim()) : null;
-                const poi = poiFromId || poiFromCode || null;
-
-                let lng = null;
-                let lat = null;
-                let code = '';
-                let name = '';
-                let poiId = item.poi_id ? String(item.poi_id) : '';
-
-                if (poi && poi.location && Array.isArray(poi.location.coordinates)) {
-                    lng = Number(poi.location.coordinates[0]);
-                    lat = Number(poi.location.coordinates[1]);
-                    code = String(poi.code || item.poi_code || '');
-                    name = String(poi.name || '');
-                    poiId = String(poi._id);
-                } else {
-                    // Fallback: some events may carry raw coordinates but no poi reference
-                    lng = Number(item.lng);
-                    lat = Number(item.lat);
-                    code = String(item.poi_code || '');
-                    name = code ? `POI ${code}` : 'Unknown POI';
-                }
-
+                const lng = Number(poi.location.coordinates[0]);
+                const lat = Number(poi.location.coordinates[1]);
                 if (Number.isNaN(lat) || Number.isNaN(lng)) return null;
+
+                const current = visitorsByPoi.get(poiId) || 0;
+                const history = historyByPoi.get(poiId) || [0];
+                const predicted = Math.round(predictNext(history));
+                const level = classifyTraffic(predicted);
+
                 return {
                     poi_id: poiId,
-                    code,
-                    name,
+                    code: String(poi.code || ''),
+                    name: String(poi.name || ''),
                     lat,
                     lng,
-                    total_events: Number(item.total_events) || 0
+                    total_events: current, // Keep for backward compatibility with heatmap intensity
+                    current,
+                    predicted,
+                    level
                 };
             })
             .filter(Boolean);
