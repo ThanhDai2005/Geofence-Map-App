@@ -14,8 +14,8 @@ exports.activatePremium = async (req, res, next) => {
     try {
         const userId = req.user._id;
 
-        // Cập nhật isPremium = true cho user
-        const updatedUser = await userRepository.updateUser(userId, { isPremium: true });
+        // Sử dụng updatePremiumById để tự động set premiumActivatedAt
+        const updatedUser = await userRepository.updatePremiumById(userId, true);
 
         if (!updatedUser) {
             return res.status(404).json({ success: false, message: 'User not found' });
@@ -25,7 +25,8 @@ exports.activatePremium = async (req, res, next) => {
             success: true,
             message: 'Premium activated successfully',
             data: {
-                isPremium: updatedUser.isPremium
+                isPremium: updatedUser.isPremium,
+                premiumActivatedAt: updatedUser.premiumActivatedAt
             }
         });
     } catch (error) {

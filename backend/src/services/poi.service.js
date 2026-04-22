@@ -683,8 +683,10 @@ class PoiService {
 
         let poi = null;
         if (decoded.type === 'static_secure_qr' && decoded.code) {
-            const code = String(decoded.code).trim().toUpperCase();
+            const code = String(decoded.code).trim();
+            console.log(`[QR-SCAN] Looking for POI with code: "${code}"`);
             poi = await poiRepository.findByCode(code);
+            console.log(`[QR-SCAN] POI found: ${poi ? `${poi.code} (status: ${poi.status})` : 'null'}`);
         } else if (decoded.type === 'qr_scan' && decoded.poiId) {
             poi = await poiRepository.findById(decoded.poiId);
         } else {
@@ -692,9 +694,11 @@ class PoiService {
         }
 
         if (!poi) {
+            console.log(`[QR-SCAN] ERROR: POI not found for code: "${decoded.code}"`);
             throw new AppError('POI not found', 404);
         }
         const st = poi.status;
+        console.log(`[QR-SCAN] POI status check: ${st}, isPending: ${st === POI_STATUS.PENDING}, isRejected: ${st === POI_STATUS.REJECTED}`);
         if (st === POI_STATUS.PENDING || st === POI_STATUS.REJECTED) {
             throw new AppError('POI is not available for scanning', 403);
         }

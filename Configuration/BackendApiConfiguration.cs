@@ -21,7 +21,7 @@ public static class BackendApiConfiguration
     /// - Dùng LocalNetworkHost (IP máy Windows từ ipconfig)
     /// </summary>
     private const bool UseNgrokTunnel = true;
-    private const string NgrokTunnelUrl = "https://untitled-handler-thimble.ngrok-free.dev"; // Thay bằng URL ngrok của bạn (KHÔNG có dấu / ở cuối)
+    private const string NgrokTunnelUrl = "https://repugnant-liberty-dragging.ngrok-free.dev"; // Thay bằng URL ngrok của bạn (KHÔNG có dấu / ở cuối)
     private const string LocalNetworkHost = "10.186.18.235"; // IP máy Windows khi cùng mạng
 
 

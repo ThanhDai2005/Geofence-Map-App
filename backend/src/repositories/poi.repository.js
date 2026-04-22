@@ -39,12 +39,13 @@ class PoiRepository {
     }
 
     async findByCode(code, { publicOnly = false } = {}) {
+        const codeFilter = { code: { $regex: new RegExp(`^${code}$`, 'i') } };
         if (publicOnly) {
             return await Poi.findOne({
-                $and: [{ code }, this._publicVisibilityFilter()]
+                $and: [codeFilter, this._publicVisibilityFilter()]
             });
         }
-        return await Poi.findOne({ code });
+        return await Poi.findOne(codeFilter);
     }
 
     async create(data) {
