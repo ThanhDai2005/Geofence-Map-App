@@ -1,14 +1,14 @@
-﻿<?xml version="1.0" encoding="utf-8" ?>
+<?xml version="1.0" encoding="utf-8" ?>
 <Shell
     x:Class="MauiApp1.AppShell"
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-    Shell.BackgroundColor="{StaticResource SurfaceDark}"
+    Shell.BackgroundColor="{StaticResource BrandPrimary}"
     Shell.ForegroundColor="White"
     Shell.TitleColor="White"
-    Shell.UnselectedColor="#B7C2CF"
-    Shell.TabBarBackgroundColor="{StaticResource SurfaceDark}"
-    Shell.TabBarForegroundColor="White"
-    Shell.TabBarUnselectedColor="#AEB9C8"
+    Shell.UnselectedColor="#5C362B"
+    Shell.TabBarBackgroundColor="{StaticResource SurfaceBackground}"
+    Shell.TabBarForegroundColor="{StaticResource BrandPrimary}"
+    Shell.TabBarUnselectedColor="{StaticResource BrandDark}"
     Shell.NavBarHasShadow="False">
 </Shell>

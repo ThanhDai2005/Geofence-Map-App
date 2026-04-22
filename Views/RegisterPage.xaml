@@ -12,8 +12,8 @@
         <BoxView VerticalOptions="Start" HeightRequest="300">
             <BoxView.Background>
                 <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                    <GradientStop Color="{StaticResource BrandPrimaryDark}" Offset="0.0" />
-                    <GradientStop Color="{StaticResource BrandPrimary}" Offset="0.6" />
+                    <GradientStop Color="{StaticResource BrandPrimary}" Offset="0.0" />
+                    <GradientStop Color="{StaticResource BrandPrimaryDark}" Offset="0.8" />
                     <GradientStop Color="{StaticResource SurfaceBackground}" Offset="1.0" />
                 </LinearGradientBrush>
             </BoxView.Background>
@@ -42,17 +42,16 @@
                                    FontAttributes="Bold"
                                    TextColor="{StaticResource TextSecondary}"
                                    Margin="4,0" />
-                            <Border Stroke="{StaticResource BorderLight}"
-                                    StrokeThickness="1"
+                            <Border Stroke="{StaticResource BrandDark}"
+                                    StrokeThickness="0.5"
                                     Padding="12,4"
                                     StrokeShape="RoundRectangle 12"
-                                    BackgroundColor="White">
+                                    BackgroundColor="{StaticResource SurfaceCard}">
                                 <Entry Text="{Binding FullName}"
                                        Placeholder="Nguyen Van A"
                                        PlaceholderColor="{StaticResource TextSecondary}"
                                        IsEnabled="{Binding IsNotBusy}"
-                                       BackgroundColor="White"
-                                       TextColor="Black" />
+                                       TextColor="{StaticResource TextPrimary}" />
                             </Border>
                         </VerticalStackLayout>
 
@@ -62,18 +61,17 @@
                                    FontAttributes="Bold"
                                    TextColor="{StaticResource TextSecondary}"
                                    Margin="4,0" />
-                            <Border Stroke="{StaticResource BorderLight}"
-                                    StrokeThickness="1"
+                            <Border Stroke="{StaticResource BrandDark}"
+                                    StrokeThickness="0.5"
                                     Padding="12,4"
                                     StrokeShape="RoundRectangle 12"
-                                    BackgroundColor="White">
+                                    BackgroundColor="{StaticResource SurfaceCard}">
                                 <Entry Text="{Binding Email}"
                                        Placeholder="email@example.com"
                                        PlaceholderColor="{StaticResource TextSecondary}"
                                        Keyboard="Email"
                                        IsEnabled="{Binding IsNotBusy}"
-                                       BackgroundColor="White"
-                                       TextColor="Black" />
+                                       TextColor="{StaticResource TextPrimary}" />
                             </Border>
                         </VerticalStackLayout>
 
@@ -83,18 +81,17 @@
                                    FontAttributes="Bold"
                                    TextColor="{StaticResource TextSecondary}"
                                    Margin="4,0" />
-                            <Border Stroke="{StaticResource BorderLight}"
-                                    StrokeThickness="1"
+                            <Border Stroke="{StaticResource BrandDark}"
+                                    StrokeThickness="0.5"
                                     Padding="12,4"
                                     StrokeShape="RoundRectangle 12"
-                                    BackgroundColor="White">
+                                    BackgroundColor="{StaticResource SurfaceCard}">
                                 <Entry Text="{Binding Password}"
                                        Placeholder="Tối thiểu 6 ký tự"
                                        PlaceholderColor="{StaticResource TextSecondary}"
                                        IsPassword="True"
                                        IsEnabled="{Binding IsNotBusy}"
-                                       BackgroundColor="White"
-                                       TextColor="Black" />
+                                       TextColor="{StaticResource TextPrimary}" />
                             </Border>
                         </VerticalStackLayout>
 
@@ -104,11 +101,11 @@
                                    FontAttributes="Bold"
                                    TextColor="{StaticResource TextSecondary}"
                                    Margin="4,0" />
-                            <Border Stroke="{StaticResource BorderLight}"
-                                    StrokeThickness="1"
+                            <Border Stroke="{StaticResource BrandDark}"
+                                    StrokeThickness="0.5"
                                     Padding="12,4"
                                     StrokeShape="RoundRectangle 12"
-                                    BackgroundColor="White">
+                                    BackgroundColor="{StaticResource SurfaceCard}">
                                 <Entry Text="{Binding ConfirmPassword}"
                                        Placeholder="Nhập lại mật khẩu"
                                        PlaceholderColor="{StaticResource TextSecondary}"

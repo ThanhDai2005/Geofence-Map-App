@@ -95,6 +95,13 @@ function generateEventHash(doc) {
 }
 
 function toRawDoc(ev, family, ts, ingestionRequestId) {
+    const payload = ev.payload && typeof ev.payload === 'object' ? { ...ev.payload } : {};
+    
+    // Explicitly link to POI ID from contract
+    if (ev.poiId) {
+        payload.poi_id = ev.poiId;
+    }
+
     const doc = {
         event_id: ev.eventId || null,
         correlation_id: ev.correlationId,
@@ -103,7 +110,7 @@ function toRawDoc(ev, family, ts, ingestionRequestId) {
         auth_state: ev.authState,
         source_system: ev.sourceSystem,
         event_family: family,
-        payload: ev.payload && typeof ev.payload === 'object' ? ev.payload : {},
+        payload,
         runtime_tick_utc_ticks: typeof ev.runtimeTickUtcTicks === 'number' ? ev.runtimeTickUtcTicks : null,
         runtime_sequence: typeof ev.runtimeSequence === 'number' ? ev.runtimeSequence : null,
         contract_version: 'v2',
@@ -113,6 +120,45 @@ function toRawDoc(ev, family, ts, ingestionRequestId) {
     };
     doc.event_hash = generateEventHash(doc);
     return doc;
+}
+
+const Poi = require('../models/poi.model');
+
+/**
+ * Resolves POI from DB to ensure strict data lineage.
+ * Overwrites client-provided coordinates with authoritative ones.
+ */
+async function resolvePoiAndFixGeo(doc) {
+    if (!doc.payload || !doc.payload.poi_id) return false;
+
+    try {
+        const poiId = String(doc.payload.poi_id);
+        // Flexible lookup: checks ObjectID first, then Code fallback (matching legacy client)
+        const lookup = mongoose.Types.ObjectId.isValid(poiId) 
+            ? { _id: poiId } 
+            : { code: poiId.toUpperCase() };
+
+        const poi = await Poi.findOne(lookup).select('_id code location').lean();
+        
+        if (!poi) {
+            console.warn(`[INGESTION] Rejected event: POI ${poiId} not found in database.`);
+            return false; 
+        }
+
+        // 🟢 HARD CONSTRAINT: Overwrite coordinates with truth data
+        doc.payload.poi_id = String(poi._id); // Normalize to technical ID
+        doc.payload.poi_code = poi.code;
+        
+        if (poi.location && poi.location.coordinates) {
+            doc.payload.longitude = poi.location.coordinates[0];
+            doc.payload.latitude = poi.location.coordinates[1];
+        }
+
+        return true;
+    } catch (err) {
+        console.error(`[INGESTION] Error resolving POI ${doc.payload.poi_id}:`, err);
+        return false;
+    }
 }
 
 async function applyIdentityFromEvent(ev, doc) {
@@ -262,17 +308,35 @@ async function ingestBatch(body, reqUser, options = {}) {
 
     // Still map identities and rollups
     for (let i = 0; i < validEvents.length; i++) {
-        // We only try to apply if there's no major crash
-        // For duplicates, we also can safely apply identities since it's idempotent
-        await applyIdentityFromEvent(validEvents[i], validDocs[i]).catch(() => {});
-
         const doc = validDocs[i];
+        
+        // 🟢 HARD CONSTRAINT: Validate and Resolve POI truth
+        if (doc.payload && doc.payload.poi_id) {
+            const resolved = await resolvePoiAndFixGeo(doc);
+            if (!resolved) {
+                // Skip ingestion for this specific event if POI is invalid
+                accepted--;
+                rejected++;
+                errors.push({ index: i, code: 'INVALID_POI', message: `POI ID ${doc.payload.poi_id} is invalid or not found.` });
+                continue;
+            }
+        } else if (doc.event_family === 'LocationEvent') {
+            // Rejection policy: Location events without POI are not allowed in this system 
+            // as per "ALL heatmap events MUST be LINKED to a VALID POI ID"
+            accepted--;
+            rejected++;
+            errors.push({ index: i, code: 'MISSING_POI', message: 'LocationEvent must include a valid poi_id for heatmap lineage.' });
+            continue;
+        }
+
+        await applyIdentityFromEvent(validEvents[i], doc).catch(() => {});
+
         if (doc.payload && doc.payload.poi_id) {
             try {
                 const hourBucket = getHourBucket(doc.timestamp);
                 const poiId = String(doc.payload.poi_id);
 
-                const stat = await PoiHourlyStats.findOneAndUpdate(
+                await PoiHourlyStats.findOneAndUpdate(
                     { poi_id: poiId, hour_bucket: hourBucket },
                     {
                         $addToSet: { unique_devices: doc.device_id },
@@ -280,16 +344,8 @@ async function ingestBatch(body, reqUser, options = {}) {
                     },
                     { upsert: true, new: true }
                 );
-
-                if (stat && stat.unique_devices) {
-                    if (stat.unique_devices.length > 1000) {
-                        stat.unique_devices = stat.unique_devices.slice(0, 1000); // HARD LIMIT
-                    }
-                    stat.total_unique_visitors = stat.unique_devices.length;
-                    await stat.save();
-                }
             } catch (err) {
-                // Ignore concurrent modify error but could log in prod
+                // Ignore concurrent modify error
             }
         }
     }

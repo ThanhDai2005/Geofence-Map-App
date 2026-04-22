@@ -9,6 +9,7 @@ const IntelligenceAnalyticsRollupDaily = require('../models/intelligence-analyti
 const IntelligenceEventRaw = require('../models/intelligence-event-raw.model');
 const PoiHourlyStats = require('../models/poi-hourly-stats.model');
 const Poi = require('../models/poi.model');
+const User = require('../models/user.model');
 const { POI_STATUS } = require('../constants/poi-status');
 
 /** Metrics API: max window between start and end (inclusive span). */
@@ -199,7 +200,7 @@ module.exports = {
             {
                 $group: {
                     _id: '$poi_id',
-                    total_visitors: { $sum: '$total_unique_visitors' }
+                    total_visitors: { $sum: { $size: { $ifNull: ["$unique_devices", []] } } }
                 }
             }
         ]).option({ maxTimeMS: MAX_TIME_MS });
@@ -208,15 +209,23 @@ module.exports = {
 
         // Step 2: Fetch recent history for prediction (last 3-4 hours)
         const predictionWindowStart = new Date(Date.now() - 6 * 3600000);
-        const historyStats = await PoiHourlyStats.find({
-            hour_bucket: { $gte: predictionWindowStart }
-        }).sort({ poi_id: 1, hour_bucket: 1 }).lean();
+        const historyStats = await PoiHourlyStats.aggregate([
+            { $match: { hour_bucket: { $gte: predictionWindowStart } } },
+            { $sort: { hour_bucket: 1 } },
+            {
+                $project: {
+                    poi_id: 1,
+                    hour_bucket: 1,
+                    total_visitors: { $size: { $ifNull: ["$unique_devices", []] } }
+                }
+            }
+        ]).option({ maxTimeMS: MAX_TIME_MS });
 
         const historyByPoi = new Map();
         for (const s of historyStats) {
             const pid = String(s.poi_id);
             if (!historyByPoi.has(pid)) historyByPoi.set(pid, []);
-            historyByPoi.get(pid).push(s.total_unique_visitors);
+            historyByPoi.get(pid).push(s.total_visitors);
         }
 
         // Step 3: Fetch POI details
@@ -255,6 +264,134 @@ module.exports = {
                 };
             })
             .filter(Boolean);
+    },
+
+    /**
+     * @param {string} userId
+     * @param {{ start: string, end: string, granularity?: string }} params
+     */
+    async getOwnerTimeline(userId, params) {
+        const { start, end } = parseIsoRange(params.start, params.end);
+        const granularity = params.granularity || 'daily';
+        
+        // Find owner POIs
+        const ownerPois = await Poi.find({ submittedBy: userId, status: POI_STATUS.APPROVED }).select('_id').lean();
+        if (ownerPois.length === 0) return [];
+        const poiIds = ownerPois.map(p => String(p._id));
+
+        const Model = rollupModel(granularity === 'hourly' ? 'hourly' : 'daily');
+        
+        const dateGrouping = {
+            hourly: { $dateTrunc: { date: "$bucket_start", unit: "hour" } },
+            daily: { $dateTrunc: { date: "$bucket_start", unit: "day" } },
+            weekly: { $dateTrunc: { date: "$bucket_start", unit: "week" } },
+            monthly: { $dateTrunc: { date: "$bucket_start", unit: "month" } },
+            yearly: { $dateTrunc: { date: "$bucket_start", unit: "year" } }
+        }[granularity] || { $dateTrunc: { date: "$bucket_start", unit: "day" } };
+
+        const pipeline = [
+            {
+                $match: {
+                    bucket_start: { $gte: start, $lte: end },
+                    poi_id: { $in: poiIds }
+                }
+            },
+            {
+                $group: {
+                    _id: dateGrouping,
+                    total_events: { $sum: '$total_events' }
+                }
+            },
+            { $sort: { _id: 1 } },
+            {
+                $project: {
+                    _id: 0,
+                    bucket_start: '$_id',
+                    total_events: 1
+                }
+            }
+        ];
+
+        return Model.aggregate(pipeline).option({ maxTimeMS: MAX_TIME_MS });
+    },
+
+    /**
+     * @param {string} userId
+     * @param {{ start: string, end: string }} params
+     */
+    async getOwnerEventsByFamily(userId, params) {
+        const { start, end } = parseIsoRange(params.start, params.end);
+        const ownerPois = await Poi.find({ submittedBy: userId, status: POI_STATUS.APPROVED }).select('_id').lean();
+        if (ownerPois.length === 0) return [];
+        const poiIds = ownerPois.map(p => String(p._id));
+
+        const pipeline = [
+            {
+                $match: {
+                    bucket_start: { $gte: start, $lte: end },
+                    poi_id: { $in: poiIds }
+                }
+            },
+            {
+                $group: {
+                    _id: '$event_family',
+                    total_events: { $sum: '$total_events' }
+                }
+            },
+            {
+                $project: {
+                    _id: 0,
+                    event_family: '$_id',
+                    total_events: 1
+                }
+            }
+        ];
+
+        return IntelligenceAnalyticsRollupDaily.aggregate(pipeline).option({ maxTimeMS: MAX_TIME_MS });
+    },
+
+    /**
+     * @param {{ start: string, end: string }} params
+     * @returns {Promise<{ totalUsers: number, newPremiumUsers: number, estimatedRevenue: number }>}
+     */
+    async getOverview(params) {
+        const { start, end } = parseIsoRange(params.start, params.end);
+
+        const [totalUsers, newPremiumUsers] = await Promise.all([
+            // Total users created up to 'end' (cumulative)
+            User.countDocuments({ createdAt: { $lte: end } }),
+
+            // New premium users within range using premiumActivatedAt
+            User.countDocuments({
+                isPremium: true,
+                premiumActivatedAt: { $gte: start, $lte: end }
+            })
+        ]);
+
+        // Estimated revenue: $20 per new premium user
+        const estimatedRevenue = newPremiumUsers * 20;
+
+        return {
+            totalUsers,
+            newPremiumUsers,
+            estimatedRevenue
+        };
+    },
+
+    /**
+     * System overview - lifetime stats (unaffected by time filter)
+     * @returns {Promise<{ totalUsers: number, totalPremiumUsers: number }>}
+     */
+    async getSystemOverview() {
+        const [totalUsers, totalPremiumUsers] = await Promise.all([
+            User.countDocuments({}),
+            User.countDocuments({ isPremium: true })
+        ]);
+
+        return {
+            totalUsers,
+            totalPremiumUsers
+        };
     },
     MAX_RANGE_MS,
     MAX_TIME_MS

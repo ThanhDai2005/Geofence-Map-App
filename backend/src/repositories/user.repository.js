@@ -33,11 +33,19 @@ class UserRepository {
     }
 
     async updatePremiumById(id, isPremium) {
-        return await User.findByIdAndUpdate(
-            id,
-            { isPremium: Boolean(isPremium) },
-            { new: true, runValidators: true }
-        ).select('-password');
+        const user = await User.findById(id);
+        if (!user) return null;
+
+        const wasPremium = user.isPremium;
+        user.isPremium = Boolean(isPremium);
+
+        // Set premiumActivatedAt when user becomes premium for the first time
+        if (!wasPremium && isPremium && !user.premiumActivatedAt) {
+            user.premiumActivatedAt = new Date();
+        }
+
+        await user.save();
+        return await User.findById(user._id).select('-password');
     }
 
     async updateActiveById(id, isActive) {
@@ -55,6 +63,7 @@ class UserRepository {
             password,
             role,
             isPremium: Boolean(isPremium),
+            premiumActivatedAt: isPremium ? new Date() : null,
             isActive: Boolean(isActive),
             qrScanCount: Math.max(0, Number(qrScanCount) || 0)
         });
@@ -64,6 +73,8 @@ class UserRepository {
     async updateByAdmin(id, payload = {}) {
         const user = await User.findById(id).select('+password');
         if (!user) return null;
+
+        const wasPremium = user.isPremium;
 
         if (Object.prototype.hasOwnProperty.call(payload, 'email')) {
             user.email = String(payload.email || '').trim().toLowerCase();
@@ -75,7 +86,13 @@ class UserRepository {
             user.role = payload.role;
         }
         if (Object.prototype.hasOwnProperty.call(payload, 'isPremium')) {
-            user.isPremium = Boolean(payload.isPremium);
+            const newIsPremium = Boolean(payload.isPremium);
+            user.isPremium = newIsPremium;
+
+            // Set premiumActivatedAt when user becomes premium for the first time
+            if (!wasPremium && newIsPremium && !user.premiumActivatedAt) {
+                user.premiumActivatedAt = new Date();
+            }
         }
         if (Object.prototype.hasOwnProperty.call(payload, 'isActive')) {
             user.isActive = Boolean(payload.isActive);

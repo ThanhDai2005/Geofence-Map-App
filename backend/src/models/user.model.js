@@ -9,6 +9,7 @@ const userSchema = new mongoose.Schema({
     password: { type: String, required: true, select: false },
     role: { type: String, enum: Object.values(ROLES), default: ROLES.USER },
     isPremium: { type: Boolean, default: false },
+    premiumActivatedAt: { type: Date, default: null },
     isActive: { type: Boolean, default: true },
     qrScanCount: { type: Number, default: 0, min: 0 }
 }, {

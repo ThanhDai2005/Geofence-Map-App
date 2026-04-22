@@ -58,7 +58,7 @@ public class DeepLinkHandler
             {
                 if (Microsoft.Maui.Controls.Application.Current?.MainPage != null)
                 {
-                    await Microsoft.Maui.Controls.Application.Current.MainPage.DisplayAlert(
+                    await Microsoft.Maui.Controls.Application.Current.MainPage.DisplayAlertAsync(
                         "Lỗi liên kết", 
                         $"Không thể mở liên kết này: {entryResult.Error}", 
                         "OK");

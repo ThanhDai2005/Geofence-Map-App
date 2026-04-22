@@ -6,8 +6,11 @@
     Title="Khám phá"
     BackgroundColor="{StaticResource SurfaceBackground}">
 
-    <ScrollView>
-        <VerticalStackLayout Padding="20,16,20,120" Spacing="22">
+    <RefreshView IsRefreshing="{Binding IsRefreshing}"
+                 Command="{Binding RefreshCommand}"
+                 RefreshColor="{StaticResource BrandPrimary}">
+        <ScrollView>
+            <VerticalStackLayout Padding="20,16,20,120" Spacing="22">
 
             <!-- HERO -->
             <Border Style="{StaticResource CardBorder}" Padding="0">
@@ -261,6 +264,7 @@
                 </VerticalStackLayout>
             </Border>
 
-        </VerticalStackLayout>
-    </ScrollView>
+            </VerticalStackLayout>
+        </ScrollView>
+    </RefreshView>
 </ContentPage>

@@ -8,6 +8,8 @@ const Cache = require('../utils/cache');
 const config = require('../config');
 const { POI_STATUS } = require('../constants/poi-status');
 const userRepository = require('../repositories/user.repository');
+const PoiChangeRequest = require('../models/poi-change-request.model');
+const Poi = require('../models/poi.model');
 
 const poiCache = new Cache(config.cache.ttl);
 const ownerPoiSubmissionCache = new Cache(10);
@@ -636,6 +638,34 @@ class PoiService {
     }
 
     /**
+     * OWNER: mint permanent signed JWT for their OWN approved POIs.
+     */
+    async generateQrScanTokenForOwner(rawPoiId, user) {
+        if (!rawPoiId || typeof rawPoiId !== 'string') {
+            throw new AppError('POI id is required', 400);
+        }
+        if (!poiRepository.isValidObjectId(rawPoiId)) {
+            throw new AppError('Invalid POI id', 400);
+        }
+        const doc = await poiRepository.findById(rawPoiId);
+        if (!doc) {
+            throw new AppError('POI not found', 404);
+        }
+
+        if (String(doc.submittedBy) !== String(user._id)) {
+            throw new AppError('Bạn không có quyền tạo mã QR cho địa điểm này.', 403);
+        }
+
+        const code = String(doc.code || '').trim();
+        const token = jwt.sign(
+            { code, type: 'static_secure_qr' },
+            config.jwtSecret
+        );
+        const scanUrl = `${config.scanQrUrlBase}?t=${encodeURIComponent(token)}`;
+        return { token, scanUrl, permanent: true };
+    }
+
+    /**
      * Redeem QR JWT and return POI.
      * - Guest users are allowed to scan and consume summary flow in app.
      * - Logged-in non-premium users still consume QR quota.
@@ -688,6 +718,89 @@ class PoiService {
 
         this._invalidateCache();
         return this._mapModerationDto(poi);
+    }
+
+    async requestPoiUpdate(poiId, user, body) {
+        const poi = await poiRepository.findById(poiId);
+        if (!poi) throw new AppError('POI not found', 404);
+        if (String(poi.submittedBy) !== String(user._id)) {
+            throw new AppError('Bạn không có quyền chỉnh sửa địa điểm này.', 403);
+        }
+
+        const mergedBody = {
+            code: poi.code,
+            radius: poi.radius,
+            location: {
+                lat: poi.location.coordinates[1],
+                lng: poi.location.coordinates[0]
+            },
+            ...body
+        };
+        const payload = this.validatePoiInput(mergedBody, { mode: 'owner' });
+        
+        return PoiChangeRequest.create({
+            poi_id: poiId,
+            submittedBy: user._id,
+            type: 'UPDATE',
+            data: payload
+        });
+    }
+
+    async requestPoiDelete(poiId, user) {
+        const poi = await poiRepository.findById(poiId);
+        if (!poi) throw new AppError('POI not found', 404);
+        if (String(poi.submittedBy) !== String(user._id)) {
+            throw new AppError('Bạn không có quyền yêu cầu xóa địa điểm này.', 403);
+        }
+
+        return PoiChangeRequest.create({
+            poi_id: poiId,
+            submittedBy: user._id,
+            type: 'DELETE'
+        });
+    }
+
+    async listPoiChangeRequests(query = {}) {
+        const page = Math.max(parseInt(query.page) || 1, 1);
+        const limit = Math.min(parseInt(query.limit) || 50, 100);
+        const skip = (page - 1) * limit;
+
+        const [items, total] = await Promise.all([
+            PoiChangeRequest.find({ status: 'PENDING' })
+                .populate('poi_id')
+                .populate('submittedBy', 'email')
+                .skip(skip)
+                .limit(limit)
+                .sort({ createdAt: -1 }),
+            PoiChangeRequest.countDocuments({ status: 'PENDING' })
+        ]);
+
+        return {
+            items,
+            pagination: { page, limit, total, totalPages: Math.ceil(total / limit) }
+        };
+    }
+
+    async reviewPoiChangeRequest(id, adminUser, { status, reason }) {
+        const req = await PoiChangeRequest.findById(id).populate('poi_id');
+        if (!req) throw new AppError('Request not found', 404);
+        if (req.status !== 'PENDING') throw new AppError('Yêu cầu đã được xử lý trước đó.', 400);
+
+        req.status = status;
+        req.reason = reason;
+        await req.save();
+
+        if (status === 'APPROVED') {
+            if (req.type === 'DELETE') {
+                await poiRepository.deleteById(req.poi_id._id);
+            } else if (req.type === 'UPDATE') {
+                // Apply update
+                await poiRepository.updateById(req.poi_id._id, req.data);
+            }
+            this._invalidateCache();
+        }
+
+        return req;
     }
 }
 

@@ -190,8 +190,8 @@ public class LanguagePackService : ILanguagePackService
 
         if (net == NetworkType.Offline)
         {
-            await MainThread.InvokeOnMainThreadAsync(() =>
-                hostPage.DisplayAlert(
+            await MainThread.InvokeOnMainThreadAsync(async () =>
+                await hostPage.DisplayAlertAsync(
                     "Không có kết nối",
                     $"Gói ngôn ngữ '{pack.NativeName}' chưa tải về và thiết bị đang offline.",
                     "OK"));
@@ -200,8 +200,8 @@ public class LanguagePackService : ILanguagePackService
 
         if (net == NetworkType.Cellular)
         {
-            var confirmed = await MainThread.InvokeOnMainThreadAsync(() =>
-                hostPage.DisplayAlert(
+            var confirmed = await MainThread.InvokeOnMainThreadAsync(async () =>
+                await hostPage.DisplayAlertAsync(
                     "Tải gói ngôn ngữ",
                     $"Gói '{pack.NativeName}' ({pack.SizeLabel}) sẽ được tải qua dữ liệu di động. Tiếp tục?",
                     "Tải xuống",

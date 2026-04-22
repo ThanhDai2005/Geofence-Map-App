@@ -1,5 +1,12 @@
 import { useCallback, useEffect, useState } from 'react';
-import { fetchOwnerIntelligenceHeatmap, fetchOwnerSubmissions } from '../apiClient.js';
+import { QRCodeSVG } from 'qrcode.react';
+import {
+  fetchOwnerIntelligenceHeatmap,
+  fetchOwnerSubmissions,
+  fetchOwnerPoiQrToken,
+  requestOwnerPoiUpdate,
+  requestOwnerPoiDelete,
+} from '../apiClient.js';
 import ContributionHeatmap from '../components/ContributionHeatmap.jsx';
 
 function contentPreview(content) {
@@ -29,6 +36,11 @@ export default function OwnerSubmissionsPage() {
   const [heatmapLoading, setHeatmapLoading] = useState(true);
   const [heatmapErr, setHeatmapErr] = useState('');
   const [selectedPoiId, setSelectedPoiId] = useState('');
+
+  const [qrModalRow, setQrModalRow] = useState(null);
+  const [qrModalUrl, setQrModalUrl] = useState('');
+  const [qrModalLoading, setQrModalLoading] = useState(false);
+  const [qrModalErr, setQrModalErr] = useState('');
   const [range, setRange] = useState(() => {
     const end = new Date();
     end.setUTCHours(23, 59, 59, 999);
@@ -37,6 +49,10 @@ export default function OwnerSubmissionsPage() {
     start.setUTCHours(0, 0, 0, 0);
     return { start, end };
   });
+
+  const [editModalRow, setEditModalRow] = useState(null);
+  const [editFormData, setEditFormData] = useState({ name: '', descriptionEn: '', descriptionVi: '' });
+  const [editLoading, setEditLoading] = useState(false);
 
   const startIso = range.start.toISOString();
   const endIso = range.end.toISOString();
@@ -80,6 +96,83 @@ export default function OwnerSubmissionsPage() {
 
   const toDateValue = (d) => d.toISOString().slice(0, 10);
   const approvedOptions = rows.filter((x) => x?.status === 'APPROVED');
+
+  async function openQrModal(row) {
+    const id = row.id || row._id;
+    if (!id) {
+      setErr('Thiếu id POI — không thể tạo QR token.');
+      return;
+    }
+    setQrModalRow(row);
+    setQrModalUrl('');
+    setQrModalErr('');
+    setQrModalLoading(true);
+    try {
+      const res = await fetchOwnerPoiQrToken(id);
+      const url = res?.data?.scanUrl;
+      if (!url || typeof url !== 'string') {
+        throw new Error('Phản hồi từ server không hợp lệ');
+      }
+      setQrModalUrl(url);
+    } catch (e) {
+      setQrModalErr(e.message || 'Không thể tải QR token');
+    } finally {
+      setQrModalLoading(false);
+    }
+  }
+
+  function openEditModal(row) {
+    setEditModalRow(row);
+    setEditFormData({
+      code: row.code || '',
+      name: row.name || '',
+      summary: row.summary || '',
+      narrationShort: row.narrationShort || '',
+      narrationLong: row.narrationLong || '',
+      lat: row.location?.lat || '',
+      lng: row.location?.lng || '',
+      radius: row.radius || 50,
+      priority: row.priority || 0,
+    });
+  }
+
+  async function handleEditSubmit(e) {
+    e.preventDefault();
+    if (!editModalRow) return;
+    setEditLoading(true);
+    try {
+      const payload = {
+        code: editFormData.code,
+        name: editFormData.name,
+        summary: editFormData.summary,
+        narrationShort: editFormData.narrationShort,
+        narrationLong: editFormData.narrationLong,
+        location: {
+          lat: Number(editFormData.lat),
+          lng: Number(editFormData.lng),
+        },
+        radius: Number(editFormData.radius),
+        priority: Number(editFormData.priority),
+      };
+      await requestOwnerPoiUpdate(editModalRow.id || editModalRow._id, payload);
+      alert('Yêu cầu chỉnh sửa đã được gửi tới Admin phê duyệt.');
+      setEditModalRow(null);
+    } catch (e) {
+      alert('Lỗi: ' + e.message);
+    } finally {
+      setEditLoading(false);
+    }
+  }
+
+  async function requestDelete(id) {
+    if (!window.confirm('Bạn có chắc chắn muốn yêu cầu XÓA địa điểm này? Yêu cầu sẽ được gửi tới Admin phê duyệt.')) return;
+    try {
+      await requestOwnerPoiDelete(id);
+      alert('Yêu cầu xóa đã được gửi. POI sẽ biến mất sau khi Admin chấp thuận.');
+    } catch (e) {
+      alert('Lỗi: ' + e.message);
+    }
+  }
 
   return (
     <div>
@@ -203,6 +296,7 @@ export default function OwnerSubmissionsPage() {
                 <th className="px-4 py-3 font-medium">Trạng thái</th>
                 <th className="px-4 py-3 font-medium">Nội dung</th>
                 <th className="px-4 py-3 font-medium">Tọa độ</th>
+                <th className="px-4 py-3 font-medium">QR</th>
                 <th className="px-4 py-3 font-medium">Cập nhật</th>
               </tr>
             </thead>
@@ -222,6 +316,35 @@ export default function OwnerSubmissionsPage() {
                     <td className="px-4 py-3">{statusBadge(row.status)}</td>
                     <td className="max-w-xs truncate px-4 py-3 text-slate-800">{contentPreview(row.content)}</td>
                     <td className="px-4 py-3 text-slate-600">{locStr}</td>
+                    <td className="px-4 py-3">
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => openQrModal(row)}
+                          className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs text-slate-900 hover:bg-slate-50"
+                        >
+                          Xem QR
+                        </button>
+                        {row.status === 'APPROVED' && (
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => openEditModal(row)}
+                              className="rounded-lg border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs text-blue-700 hover:bg-blue-100"
+                            >
+                              Sửa
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => requestDelete(id)}
+                              className="rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-xs text-red-700 hover:bg-red-100"
+                            >
+                              Xóa
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    </td>
                     <td className="px-4 py-3 text-slate-600">
                       {row.updatedAt ? new Date(row.updatedAt).toLocaleString() : '—'}
                     </td>
@@ -230,6 +353,178 @@ export default function OwnerSubmissionsPage() {
               })}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {/* QR Modal (JWT) — large scannable, dark theme like admin */}
+      {qrModalRow && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+          <div className="w-full max-w-md rounded-xl border border-slate-700 bg-slate-900 p-6 shadow-2xl">
+            <h2 className="text-lg font-semibold text-white">QR quét (bảo mật)</h2>
+            <p className="mt-1 font-mono text-sm text-emerald-300">{qrModalRow.code}</p>
+            <p className="mt-2 text-xs text-slate-400">
+              Mã QR là token ký số vĩnh viễn (không hết hạn). Ứng dụng quét sẽ gửi token lên server để xác thực chữ ký.
+            </p>
+            
+            {qrModalErr && (
+              <p className="mt-3 text-sm text-red-300">{qrModalErr}</p>
+            )}
+            
+            {qrModalLoading && (
+              <p className="mt-6 text-center text-slate-400">Đang tạo mã…</p>
+            )}
+            
+            {!qrModalLoading && qrModalUrl && (
+              <div className="mt-6 flex flex-col items-center gap-3">
+                <div className="rounded-lg bg-white p-4">
+                  <QRCodeSVG value={qrModalUrl} size={240} level="M" includeMargin />
+                </div>
+                <p className="break-all text-center text-[10px] text-slate-500">{qrModalUrl}</p>
+              </div>
+            )}
+            
+            <div className="mt-6 flex justify-end">
+              <button
+                type="button"
+                onClick={() => {
+                  setQrModalRow(null);
+                  setQrModalUrl('');
+                  setQrModalErr('');
+                }}
+                className="rounded-lg border border-slate-600 px-4 py-2 text-sm text-slate-200 hover:bg-slate-800"
+              >
+                Đóng
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Edit Modal */}
+      {editModalRow && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 overflow-y-auto">
+          <div className="w-full max-w-2xl rounded-xl border border-slate-200 bg-white p-8 shadow-2xl my-8">
+            <h2 className="text-xl font-bold text-slate-900 mb-6">Chỉnh sửa địa điểm</h2>
+            
+            <form onSubmit={handleEditSubmit} className="space-y-5">
+              <div>
+                <label className="block text-sm font-medium text-slate-700">Mã địa điểm (duy nhất)</label>
+                <input
+                  type="text"
+                  required
+                  disabled
+                  className="mt-1 block w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-slate-500 cursor-not-allowed"
+                  value={editFormData.code}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700">Tên địa điểm</label>
+                <input
+                  type="text"
+                  required
+                  className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 focus:border-emerald-500 focus:ring-emerald-500"
+                  value={editFormData.name}
+                  onChange={(e) => setEditFormData({ ...editFormData, name: e.target.value })}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700">Tóm tắt</label>
+                <input
+                  type="text"
+                  className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 focus:border-emerald-500 focus:ring-emerald-500"
+                  value={editFormData.summary}
+                  onChange={(e) => setEditFormData({ ...editFormData, summary: e.target.value })}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700">Văn bản ngắn</label>
+                <input
+                  type="text"
+                  className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 focus:border-emerald-500 focus:ring-emerald-500"
+                  value={editFormData.narrationShort}
+                  onChange={(e) => setEditFormData({ ...editFormData, narrationShort: e.target.value })}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700">Văn bản dài (premium)</label>
+                <textarea
+                  rows="4"
+                  className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 focus:border-emerald-500 focus:ring-emerald-500"
+                  value={editFormData.narrationLong}
+                  onChange={(e) => setEditFormData({ ...editFormData, narrationLong: e.target.value })}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700">Vĩ độ</label>
+                  <input
+                    type="number"
+                    step="any"
+                    required
+                    className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 focus:border-emerald-500 focus:ring-emerald-500"
+                    value={editFormData.lat}
+                    onChange={(e) => setEditFormData({ ...editFormData, lat: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700">Kinh độ</label>
+                  <input
+                    type="number"
+                    step="any"
+                    required
+                    className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 focus:border-emerald-500 focus:ring-emerald-500"
+                    value={editFormData.lng}
+                    onChange={(e) => setEditFormData({ ...editFormData, lng: e.target.value })}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700">Bán kính (mét)</label>
+                  <input
+                    type="number"
+                    required
+                    className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 focus:border-emerald-500 focus:ring-emerald-500"
+                    value={editFormData.radius}
+                    onChange={(e) => setEditFormData({ ...editFormData, radius: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700">Priority</label>
+                  <input
+                    type="number"
+                    required
+                    className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 focus:border-emerald-500 focus:ring-emerald-500"
+                    value={editFormData.priority}
+                    onChange={(e) => setEditFormData({ ...editFormData, priority: e.target.value })}
+                  />
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-3 pt-6 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setEditModalRow(null)}
+                  className="rounded-lg border border-slate-300 px-6 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                  disabled={editLoading}
+                >
+                  Hủy
+                </button>
+                <button
+                  type="submit"
+                  className="rounded-lg bg-emerald-600 px-6 py-2.5 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-50 shadow-sm"
+                  disabled={editLoading}
+                >
+                  {editLoading ? 'Đang gửi...' : 'Gửi yêu cầu phê duyệt'}
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
     </div>

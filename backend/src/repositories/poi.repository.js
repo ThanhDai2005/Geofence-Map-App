@@ -120,6 +120,14 @@ class PoiRepository {
             { new: true, runValidators: true, ...options }
         );
     }
+
+    async updateById(id, update) {
+        return await Poi.findByIdAndUpdate(id, update, { new: true, runValidators: true });
+    }
+
+    async deleteById(id) {
+        return await Poi.findByIdAndDelete(id);
+    }
 }
 
 module.exports = new PoiRepository();

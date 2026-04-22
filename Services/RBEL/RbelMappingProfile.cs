@@ -70,7 +70,8 @@ public static class RbelMappingProfile
             RuntimeTickUtcTicks = evt.UtcTicks,
             RuntimeSequence = runtimeSequence,
             Timestamp = ts,
-            Payload = payload
+            Payload = payload,
+            PoiId = evt.PoiCode
         };
     }
 

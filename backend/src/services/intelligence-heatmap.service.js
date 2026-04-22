@@ -73,7 +73,7 @@ async function aggregateHeatmap(rangeStart, rangeEnd, poiIdStrings) {
         {
             $group: {
                 _id: '$hour_bucket',
-                total_unique_visitors: { $sum: '$total_unique_visitors' }
+                total_unique_visitors: { $sum: { $size: { $ifNull: ['$unique_devices', []] } } }
             }
         },
         {

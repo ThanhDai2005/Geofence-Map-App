@@ -161,6 +161,10 @@ export async function submitOwnerPoi(body) {
   return apiRequest("/api/v1/owner/pois", { method: "POST", body });
 }
 
+export async function fetchOwnerPoiQrToken(poiId) {
+  return apiRequest(`/api/v1/owner/pois/${encodeURIComponent(poiId)}/qr-token`);
+}
+
 /** @returns {Promise<Array<{ event_family: string, total_events: number }>>} */
 export async function fetchIntelligenceEventsByFamily(
   start,
@@ -211,6 +215,17 @@ export async function fetchIntelligenceGeoHeatmap(start, end) {
   return apiRequest(`/api/v1/admin/intelligence/metrics/geo-heatmap?${q}`);
 }
 
+/** @returns {Promise<{ totalUsers: number, newPremiumUsers: number, estimatedRevenue: number }>} */
+export async function fetchIntelligenceOverview(start, end) {
+  const q = new URLSearchParams({ start, end });
+  return apiRequest(`/api/v1/admin/intelligence/metrics/overview?${q}`);
+}
+
+/** @returns {Promise<{ totalUsers: number, totalPremiumUsers: number }>} */
+export async function fetchSystemOverview() {
+  return apiRequest('/api/v1/admin/intelligence/metrics/system-overview');
+}
+
 /** @returns {Promise<Array<{ date: string, hour: number, total_events: number }>>} */
 export async function fetchIntelligenceHeatmap(start, end) {
   const q = new URLSearchParams({ start, end });
@@ -222,6 +237,41 @@ export async function fetchOwnerIntelligenceHeatmap(start, end, poiId) {
   const q = new URLSearchParams({ start, end });
   if (poiId) q.set('poi_id', String(poiId));
   return apiRequest(`/api/v1/owner/intelligence/heatmap?${q}`);
+}
+
+export async function fetchOwnerIntelligenceTimeline(start, end, granularity = "daily") {
+  const q = new URLSearchParams({ start, end, granularity });
+  return apiRequest(`/api/v1/owner/intelligence/metrics/timeline?${q}`);
+}
+
+export async function fetchOwnerIntelligenceEventsByFamily(start, end) {
+  const q = new URLSearchParams({ start, end });
+  return apiRequest(`/api/v1/owner/intelligence/metrics/events-by-family?${q}`);
+}
+
+export async function requestOwnerPoiUpdate(poiId, body) {
+  return apiRequest(`/api/v1/owner/pois/${encodeURIComponent(poiId)}/request-update`, {
+    method: "POST",
+    body,
+  });
+}
+
+export async function requestOwnerPoiDelete(poiId) {
+  return apiRequest(`/api/v1/owner/pois/${encodeURIComponent(poiId)}/request-delete`, {
+    method: "POST",
+  });
+}
+
+export async function fetchPoiChangeRequests(page = 1, limit = 50) {
+  const q = new URLSearchParams({ page: String(page), limit: String(limit) });
+  return apiRequest(`/api/v1/admin/pois/change-requests?${q}`);
+}
+
+export async function reviewPoiChangeRequest(requestId, status, reason) {
+  return apiRequest(`/api/v1/admin/pois/change-requests/${encodeURIComponent(requestId)}/review`, {
+    method: "POST",
+    body: { status, reason },
+  });
 }
 
 /** Device sessions for admin dashboard (online/offline, IP, user). */

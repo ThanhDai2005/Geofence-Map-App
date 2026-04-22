@@ -15,5 +15,7 @@ router.get('/:id/qr-token', adminPoiController.getQrToken);
 router.get('/audits', adminPoiAuditController.list);
 router.post('/:id/approve', adminPoiController.approve);
 router.post('/:id/reject', adminPoiController.reject);
+router.get('/change-requests', adminPoiController.listChangeRequests);
+router.post('/change-requests/:id/review', adminPoiController.reviewChangeRequest);
 
 module.exports = router;

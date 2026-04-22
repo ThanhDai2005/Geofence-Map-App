@@ -17,6 +17,18 @@ class OwnerService {
     async listMySubmissions(user, query) {
         return poiService.listOwnerSubmissions(user, query);
     }
+
+    async getQrTokenForOwner(user, poiId) {
+        return poiService.generateQrScanTokenForOwner(poiId, user);
+    }
+
+    async requestUpdate(user, poiId, body) {
+        return poiService.requestPoiUpdate(poiId, user, body);
+    }
+
+    async requestDelete(user, poiId) {
+        return poiService.requestPoiDelete(poiId, user);
+    }
 }
 
 module.exports = new OwnerService();

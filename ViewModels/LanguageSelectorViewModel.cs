@@ -89,7 +89,7 @@ public class LanguageSelectorViewModel : INotifyPropertyChanged
 
                 case LanguagePackEnsureResult.AlreadyDownloading:
                     // Another tap started the download — just inform the user and wait.
-                    await hostPage!.DisplayAlert(
+                    await hostPage!.DisplayAlertAsync(
                         "Đang tải xuống",
                         $"Gói ngôn ngữ '{pack.NativeName}' đang được tải. Vui lòng thử lại sau giây lát.",
                         "OK");

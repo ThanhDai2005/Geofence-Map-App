@@ -152,10 +152,11 @@ public partial class MapPage : ContentPage, IQueryAttributable
 
             var pendingFocus = _vm.ConsumePendingFocusRequest();
 
-            loadTask.ContinueWith(async t =>
+            _ = Task.Run(async () =>
             {
                 try
                 {
+                    await loadTask;
                     await MainThread.InvokeOnMainThreadAsync(() =>
                     {
                         try
@@ -216,9 +217,9 @@ public partial class MapPage : ContentPage, IQueryAttributable
                 }
                 catch (Exception ex)
                 {
-                    Debug.WriteLine($"[MAP-ERR] loadTask continuation: {ex}");
+                    Debug.WriteLine($"[MAP-ERR] loadTask background logic: {ex}");
                 }
-            }, TaskScheduler.Default);
+            });
         }
         else
         {

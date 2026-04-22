@@ -14,6 +14,23 @@ public partial class RegisterPage : ContentPage
         _navService = navService;
     }
 
+    protected override async void OnAppearing()
+    {
+        base.OnAppearing();
+        
+        var content = this.Content;
+        if (content != null)
+        {
+            content.Opacity = 0;
+            content.TranslationY = 30;
+            
+            await Task.WhenAll(
+                content.FadeTo(1, 400, Easing.CubicOut),
+                content.TranslateToAsync(0, 0, 400, Easing.CubicOut)
+            );
+        }
+    }
+
     private async void OnBackClicked(object sender, EventArgs e)
     {
         try

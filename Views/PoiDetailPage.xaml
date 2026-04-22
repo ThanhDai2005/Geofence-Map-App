@@ -11,8 +11,8 @@
         <BoxView VerticalOptions="Start" HeightRequest="220">
             <BoxView.Background>
                 <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                    <GradientStop Color="{StaticResource BrandPrimaryDark}" Offset="0.0" />
-                    <GradientStop Color="{StaticResource BrandPrimary}" Offset="0.6" />
+                    <GradientStop Color="{StaticResource BrandPrimary}" Offset="0.0" />
+                    <GradientStop Color="{StaticResource BrandPrimaryDark}" Offset="0.8" />
                     <GradientStop Color="{StaticResource SurfaceBackground}" Offset="1.0" />
                 </LinearGradientBrush>
             </BoxView.Background>
@@ -61,8 +61,8 @@
 
                         <!-- AUTO TRANSLATED BADGE -->
                         <Border IsVisible="{Binding Poi.IsAutoTranslated}"
-                                BackgroundColor="{StaticResource SurfaceSoft}"
-                                Stroke="{StaticResource BorderLight}"
+                                BackgroundColor="{StaticResource BrandAccent}"
+                                StrokeThickness="0"
                                 HorizontalOptions="Start"
                                 Padding="8,4"
                                 StrokeShape="RoundRectangle 8">
@@ -70,8 +70,8 @@
                                 <Label Text="✨" FontSize="12" VerticalOptions="Center" />
                                 <Label Text="Bản dịch tự động"
                                        FontSize="11"
-                                       FontAttributes="Italic"
-                                       TextColor="{StaticResource TextSecondary}"
+                                       FontAttributes="Bold"
+                                       TextColor="{StaticResource BrandDark}"
                                        VerticalOptions="Center" />
                             </HorizontalStackLayout>
                         </Border>
@@ -119,13 +119,14 @@
                             <!-- PREMIUM DETAILED BUTTON (locked for non-premium) -->
                             <!-- Luôn bật: user thường bấm → hộp thoại Premium / nâng cấp; Premium → phát NarrationLong -->
                             <Button Text="💎 Nghe chi tiết"
-                                    Style="{StaticResource PrimaryButton}"
+                                    Style="{StaticResource CTAButton}"
                                     Clicked="OnPlayDetailedClicked"
                                     Grid.Row="1"
                                     Grid.ColumnSpan="2">
                                 <Button.Triggers>
                                     <DataTrigger TargetType="Button" Binding="{Binding IsPremium}" Value="False">
                                         <Setter Property="Text" Value="🔒 Nghe chi tiết (Premium)" />
+                                        <Setter Property="BackgroundColor" Value="{StaticResource BrandAccent}" />
                                     </DataTrigger>
                                 </Button.Triggers>
                             </Button>

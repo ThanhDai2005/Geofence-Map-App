@@ -57,13 +57,13 @@ namespace MauiApp1
                     return;
                 }
 
-                if (Application is not MauiApplication mauiApp || mauiApp.Services == null)
+                if (IPlatformApplication.Current?.Services == null)
                 {
                     global::System.Diagnostics.Debug.WriteLine("[DL-ERR] MAUI services unavailable");
                     return;
                 }
 
-                var services = mauiApp.Services;
+                var services = IPlatformApplication.Current.Services;
                 var pending = services.GetService<PendingDeepLinkStore>();
                 var coordinator = services.GetService<DeepLinkCoordinator>();
 

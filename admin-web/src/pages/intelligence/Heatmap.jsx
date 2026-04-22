@@ -1,4 +1,5 @@
 import { Fragment, useMemo } from 'react';
+import { HEATMAP_THRESHOLDS, HEATMAP_COLORS } from '../../heatmapConfig.js';
 
 /**
  * 7×24 activity heatmap (UTC): rows = calendar days, columns = hours 0–23.
@@ -20,7 +21,7 @@ function buildGrid(dayKeys, cells) {
   for (const c of cells) {
     const d = c.date;
     const h = Number(c.hour);
-    const n = Number(c.total_events) || 0;
+    const n = Number(c.total_events ?? c.total_unique_visitors) || 0;
     if (!d || Number.isNaN(h) || h < 0 || h > 23) continue;
     const key = `${d}|${h}`;
     map.set(key, (map.get(key) || 0) + n);
@@ -34,15 +35,13 @@ function buildGrid(dayKeys, cells) {
   return matrix;
 }
 
-function cellColor(count, max) {
-  if (max <= 0 || count <= 0) {
-    return 'hsl(125, 55%, 32%)';
-  }
-  const t = Math.min(1, count / max);
-  const hue = 125 * (1 - t);
-  const light = 28 + 22 * (1 - t * 0.65);
-  const sat = 72 + 18 * t;
-  return `hsl(${hue}, ${sat}%, ${light}%)`;
+function cellColor(count) {
+  if (!count || count <= 0) return HEATMAP_COLORS.EMPTY;
+  if (count < HEATMAP_THRESHOLDS.LEVEL_1) return HEATMAP_COLORS.EMPTY;
+  if (count < HEATMAP_THRESHOLDS.LEVEL_2) return HEATMAP_COLORS.LEVEL_1;
+  if (count < HEATMAP_THRESHOLDS.LEVEL_3) return HEATMAP_COLORS.LEVEL_2;
+  if (count < HEATMAP_THRESHOLDS.LEVEL_4) return HEATMAP_COLORS.LEVEL_3;
+  return HEATMAP_COLORS.LEVEL_4;
 }
 
 function formatDayLabel(isoDate) {
@@ -88,26 +87,40 @@ export default function Heatmap({
   const flatMax = Math.max(1, ...matrix.flat());
 
   return (
-    <section>
-      <h2 className="text-lg font-medium text-slate-800">{title}</h2>
-      {subtitle && <p className="mt-1 text-sm text-slate-600">{subtitle}</p>}
-      <div className="mt-3 overflow-x-auto rounded-xl border border-slate-200 bg-white p-4">
-        <div className="inline-block min-w-[720px]">
-          <div className="grid" style={{ gridTemplateColumns: '88px repeat(24, minmax(0, 1fr))' }}>
+    <section className="animate-in fade-in slide-in-from-bottom-4 duration-1000">
+      <div className="flex items-center justify-between mb-4">
+        <div>
+          <h2 className="text-xl font-black text-slate-800">{title}</h2>
+          {subtitle && <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mt-1">{subtitle}</p>}
+        </div>
+        <div className="flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1 text-[10px] font-bold text-slate-500">
+          <span className="h-2 w-2 rounded-full bg-rose-500 animate-pulse" />
+          LIVE DATA
+        </div>
+      </div>
+
+      <div className="overflow-x-auto rounded-3xl border border-slate-200 bg-white/50 p-6 backdrop-blur-sm shadow-inner group">
+        <div className="inline-block min-w-[800px]">
+          <div className="grid" style={{ gridTemplateColumns: '100px repeat(24, minmax(0, 1fr))' }}>
             <div />
             {Array.from({ length: 24 }, (_, h) => (
-              <div key={h} className="px-0.5 text-center text-[10px] font-medium text-slate-500">
-                {h}
+              <div key={h} className="px-0.5 pb-2 text-center text-[10px] font-black text-slate-300 group-hover:text-slate-500 transition-colors">
+                {h.toString().padStart(2, '0')}
               </div>
             ))}
             {dayKeys.map((day, row) => (
               <Fragment key={day}>
-                <div className="flex items-center pr-2 text-xs text-slate-600">{formatDayLabel(day)}</div>
+                <div className="flex items-center pr-4 text-[10px] font-black uppercase tracking-tight text-slate-400">
+                  {formatDayLabel(day)}
+                </div>
                 {matrix[row].map((count, col) => (
                   <div
                     key={`${day}-${col}`}
-                    className="m-0.5 aspect-square min-h-[18px] rounded-sm border border-slate-200/80"
-                    style={{ backgroundColor: cellColor(count, flatMax) }}
+                    className="m-[1.5px] aspect-square min-h-[22px] rounded-[4px] shadow-sm transition-all hover:scale-125 hover:z-10 cursor-pointer"
+                    style={{ 
+                      backgroundColor: cellColor(count),
+                      outline: count > 0 ? '1px solid rgba(255,255,255,0.2)' : 'none'
+                    }}
                     title={`${day} ${col}:00 UTC — ${count} events`}
                   />
                 ))}
@@ -115,11 +128,21 @@ export default function Heatmap({
             ))}
           </div>
         </div>
-        <div className="mt-4 flex flex-wrap items-center gap-4 text-xs text-slate-600">
-          <span>Thấp</span>
-          <div className="h-3 w-40 rounded bg-gradient-to-r from-green-700 via-yellow-400 to-red-600" />
-          <span>Cao</span>
-          <span className="text-slate-500">(max trong cửa sổ: {flatMax})</span>
+        <div className="mt-8 flex items-center justify-between">
+          <div className="flex items-center gap-3 text-[10px] font-bold text-slate-400">
+            <span>QUIET</span>
+            <div className="flex gap-1">
+              <div className="h-3 w-3 rounded-sm" style={{ backgroundColor: HEATMAP_COLORS.EMPTY }} title="0" />
+              <div className="h-3 w-3 rounded-sm" style={{ backgroundColor: HEATMAP_COLORS.LEVEL_1 }} title={`>= ${HEATMAP_THRESHOLDS.LEVEL_1}`} />
+              <div className="h-3 w-3 rounded-sm" style={{ backgroundColor: HEATMAP_COLORS.LEVEL_2 }} title={`>= ${HEATMAP_THRESHOLDS.LEVEL_2}`} />
+              <div className="h-3 w-3 rounded-sm" style={{ backgroundColor: HEATMAP_COLORS.LEVEL_3 }} title={`>= ${HEATMAP_THRESHOLDS.LEVEL_3}`} />
+              <div className="h-3 w-3 rounded-sm" style={{ backgroundColor: HEATMAP_COLORS.LEVEL_4 }} title={`>= ${HEATMAP_THRESHOLDS.LEVEL_4}`} />
+            </div>
+            <span>INTENSE</span>
+          </div>
+          <div className="text-[10px] font-bold text-slate-300">
+            MAX BANDWIDTH: <span className="text-slate-800">{flatMax} EVENTS/HR</span>
+          </div>
         </div>
       </div>
     </section>

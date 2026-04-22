@@ -55,3 +55,25 @@ exports.reject = async (req, res, next) => {
         next(error);
     }
 };
+
+exports.listChangeRequests = async (req, res, next) => {
+    try {
+        const result = await poiService.listPoiChangeRequests(req.query);
+        res.status(200).json({
+            success: true,
+            data: result.items,
+            pagination: result.pagination
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+exports.reviewChangeRequest = async (req, res, next) => {
+    try {
+        const data = await poiService.reviewPoiChangeRequest(req.params.id, req.user, req.body);
+        res.status(200).json({ success: true, data });
+    } catch (error) {
+        next(error);
+    }
+};

@@ -337,6 +337,7 @@ public class PoiEntryCoordinator : IPoiEntryCoordinator
                 Longitude = poiLongitude,
                 GeoRadiusMeters = poiRadiusMeters,
                 GeoSource = geoSource,
+                PoiId = poiCode, // On client, ID is currently Code for seeded POIs
                 BatchItemCount = null
             });
         }

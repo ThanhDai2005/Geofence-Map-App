@@ -1,30 +1,25 @@
-﻿<?xml version="1.0" encoding="utf-8" ?>
+<?xml version="1.0" encoding="utf-8" ?>
 <ResourceDictionary xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
                     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml">
 
     <!-- Brand identity -->
-    <Color x:Key="BrandPrimary">#A3473D</Color>
-    <Color x:Key="BrandPrimaryDark">#6A2C25</Color>
-    <Color x:Key="BrandAccent">#D94E2A</Color>
-
-    <!-- Nature / travel palette -->
-    <Color x:Key="NatureEmerald">#1F8A70</Color>
-    <Color x:Key="NatureBlue">#2E7DAF</Color>
-    <Color x:Key="NatureSky">#8FD3FF</Color>
-    <Color x:Key="NatureGold">#E7B75F</Color>
+    <Color x:Key="BrandPrimary">#DF6C82</Color>
+    <Color x:Key="BrandPrimaryDark">#C55A6E</Color> <!-- Slightly darker shade of Primary -->
+    <Color x:Key="BrandAccent">#E7D050</Color>
+    <Color x:Key="BrandDark">#5C362B</Color>
 
     <!-- Surfaces -->
-    <Color x:Key="SurfaceBackground">#F6F3EE</Color>
-    <Color x:Key="SurfaceCard">#FFFDFC</Color>
-    <Color x:Key="SurfaceSoft">#F3ECE6</Color>
-    <Color x:Key="SurfaceDark">#16324A</Color>
+    <Color x:Key="SurfaceBackground">#FBF9F9</Color>
+    <Color x:Key="SurfaceCard">#FFFFFF</Color>
+    <Color x:Key="SurfaceSoft">#F5F0EF</Color>
+    <Color x:Key="SurfaceDark">#5C362B</Color>
 
     <!-- Text -->
-    <Color x:Key="TextPrimary">#1D1D1D</Color>
-    <Color x:Key="TextSecondary">#6F6963</Color>
+    <Color x:Key="TextPrimary">#4A3B36</Color>
+    <Color x:Key="TextSecondary">#877B77</Color>
     <Color x:Key="TextOnDark">#FFFFFF</Color>
 
     <!-- Border / shadow -->
-    <Color x:Key="BorderLight">#E8DDD3</Color>
-    <Color x:Key="ShadowColor">#22000000</Color>
+    <Color x:Key="BorderLight">#5C362B</Color> <!-- Using BrandDark for borders as per rules -->
+    <Color x:Key="ShadowColor">#15000000</Color>
 </ResourceDictionary>

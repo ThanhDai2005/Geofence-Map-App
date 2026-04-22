@@ -113,7 +113,7 @@ public partial class QrScannerPage : ContentPage
                 {
                     if (ScanLine is null || ct.IsCancellationRequested) return;
                     ScanLine.TranslationY = 0;
-                    await ScanLine.TranslateTo(0, 200, 1300, Easing.Linear);
+                    await ScanLine.TranslateToAsync(0, 200, 1300, Easing.Linear);
                 }).ConfigureAwait(false);
             }
         }

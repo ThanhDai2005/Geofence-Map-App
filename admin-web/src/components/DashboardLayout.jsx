@@ -21,6 +21,7 @@ export default function DashboardLayout() {
     { to: "/devices", label: "Quản lý Thiết bị" },
     { to: "/audits", label: "Nhật ký duyệt" },
     { to: "/intelligence/dashboard", label: "Intelligence Dashboard" },
+    { to: "/change-requests", label: "Yêu cầu thay đổi" },
   ];
 
   const ownerLinks = [

@@ -11,7 +11,8 @@
       "Bash(unzip -o ngrok.zip)",
       "Bash(./ngrok.exe config *)",
       "Bash(./ngrok.exe http *)",
-      "Bash(curl -s http://localhost:4040/api/tunnels)"
+      "Bash(curl -s http://localhost:4040/api/tunnels)",
+      "Bash(node scripts/clean-pois.js)"
     ]
   }
 }

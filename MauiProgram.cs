@@ -96,10 +96,7 @@ public static class MauiProgram
         builder.Services.AddSingleton<IRuntimeTelemetry>(sp => sp.GetRequiredService<RuntimeTelemetryService>());
         builder.Services.AddSingleton<BatteryEfficiencyMonitor>();
 
-        builder.Services.AddSingleton<GeofenceService>();
-        builder.Services.AddSingleton<IGeofenceService>(sp => new ObservingGeofenceService(
-            sp.GetRequiredService<GeofenceService>(),
-            sp.GetRequiredService<IRuntimeTelemetry>()));
+        builder.Services.AddSingleton<IGeofenceService, GeofenceService>();
 
         builder.Services.AddSingleton<GeofenceArbitrationKernel>();
         builder.Services.AddSingleton<ObservingGeofenceArbitrationKernel>(sp => new ObservingGeofenceArbitrationKernel(
@@ -241,6 +238,7 @@ public static class MauiProgram
         builder.Services.AddSingleton<PoiFocusService>();
         builder.Services.AddSingleton<LanguageSwitchService>();
 
+        builder.Services.AddTransient<ViewModels.ExploreViewModel>();
         builder.Services.AddTransient<ExplorePage>();
         builder.Services.AddTransient<AboutPage>();
         builder.Services.AddTransient<MapPage>();

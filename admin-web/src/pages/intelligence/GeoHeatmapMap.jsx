@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useRef } from 'react';
 import { MapContainer, TileLayer, useMap, CircleMarker, Tooltip } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -14,17 +14,11 @@ export function getColor(value) {
 // ⚙️ IMPLEMENTATION PART 3 — LEAFLET HEATMAP LAYER
 function HeatmapLayer({ points, longitudeExtractor, latitudeExtractor, intensityExtractor }) {
   const map = useMap();
+  const layerRef = useRef(null);
 
   useEffect(() => {
-    if (!Array.isArray(points) || points.length === 0) return undefined;
-
-    const heatData = points.map(p => [
-      latitudeExtractor(p),
-      longitudeExtractor(p),
-      intensityExtractor(p)
-    ]);
-
-    const layer = L.heatLayer(heatData, {
+    // Initial layer creation
+    const layer = L.heatLayer([], {
       radius: 25,
       blur: 15,
       maxZoom: 17,
@@ -36,10 +30,29 @@ function HeatmapLayer({ points, longitudeExtractor, latitudeExtractor, intensity
       },
     }).addTo(map);
 
+    layerRef.current = layer;
+
     return () => {
       map.removeLayer(layer);
     };
-  }, [map, points, latitudeExtractor, longitudeExtractor, intensityExtractor]);
+  }, [map]);
+
+  useEffect(() => {
+    if (!layerRef.current || !Array.isArray(points)) return;
+
+    const heatData = points.map(p => [
+      latitudeExtractor(p),
+      longitudeExtractor(p),
+      intensityExtractor(p)
+    ]);
+
+    // Update existing layer data without re-creating (Zero Flicker)
+    try {
+        layerRef.current.setLatLngs(heatData);
+    } catch (e) {
+        console.error("[Heatmap] Failed to update setLatLngs", e);
+    }
+  }, [points, latitudeExtractor, longitudeExtractor, intensityExtractor]);
 
   return null;
 }
@@ -115,21 +128,28 @@ function PredictionMarkers({ points }) {
 // ⚙️ IMPLEMENTATION PART 5 — LEGEND (BẮT BUỘC)
 function HeatmapLegend() {
   return (
-    <div className="absolute bottom-4 right-4 z-[1000] bg-white/95 backdrop-blur-sm p-4 rounded-xl shadow-lg border border-slate-200 pointer-events-auto">
-      <h4 className="text-sm font-bold text-slate-800 mb-3">Mức độ đông đúc</h4>
-      <div className="flex flex-col gap-2.5">
-        <div className="flex items-center gap-3">
-          <span className="w-5 h-5 rounded hover:scale-110 transition-transform shadow-sm" style={{ backgroundColor: getColor(0) }} />
-          <span className="text-sm text-slate-600 font-medium">Ít người (Low traffic)</span>
-        </div>
-        <div className="flex items-center gap-3">
-          <span className="w-5 h-5 rounded hover:scale-110 transition-transform shadow-sm" style={{ backgroundColor: getColor(0.5) }} />
-          <span className="text-sm text-slate-600 font-medium">Trung bình (Medium)</span>
-        </div>
-        <div className="flex items-center gap-3">
-          <span className="w-5 h-5 rounded hover:scale-110 transition-transform shadow-sm" style={{ backgroundColor: getColor(1) }} />
-          <span className="text-sm text-slate-600 font-medium">Rất đông (High traffic)</span>
-        </div>
+    <div className="absolute bottom-6 right-6 z-[1000] bg-white/80 backdrop-blur-xl p-6 rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] border border-white/50 pointer-events-auto ring-1 ring-black/5 animate-in slide-in-from-right-4 duration-1000">
+      <div className="flex items-center gap-2 mb-4">
+        <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+        <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-800">Traffic Density Registry</h4>
+      </div>
+      <div className="flex flex-col gap-4">
+        {[
+          { label: 'Low Intensity', color: getColor(0) },
+          { label: 'Moderate Flow', color: getColor(0.5) },
+          { label: 'Peak Capacity', color: getColor(1) },
+        ].map((item, idx) => (
+          <div key={idx} className="flex items-center gap-4 group cursor-help">
+            <div className="relative h-6 w-6">
+              <span className="absolute inset-0 rounded-lg blur-md opacity-40 transition-opacity group-hover:opacity-100" style={{ backgroundColor: item.color }} />
+              <span className="relative block h-full w-full rounded-lg shadow-sm border border-white/20 transition-transform group-hover:scale-110" style={{ backgroundColor: item.color }} />
+            </div>
+            <span className="text-xs font-bold text-slate-600 group-hover:text-slate-900 transition-colors uppercase tracking-tight">{item.label}</span>
+          </div>
+        ))}
+      </div>
+      <div className="mt-6 pt-4 border-t border-slate-200/50">
+        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">Normalized sensor data (0.0 - 1.0)</p>
       </div>
     </div>
   );
@@ -233,8 +253,9 @@ export default function GeoHeatmapMap({
   }
 
   return (
-    <div className="relative overflow-hidden rounded-xl border border-slate-200 shadow-sm">
-      <MapContainer
+    <div className="group relative overflow-hidden rounded-[2.5rem] border border-slate-200 bg-white p-2 shadow-2xl shadow-slate-200 transition-all hover:shadow-slate-300">
+      <div className="overflow-hidden rounded-[2rem]">
+        <MapContainer
         center={[10.7769, 106.7009]}
         zoom={12}
         scrollWheelZoom
@@ -253,6 +274,7 @@ export default function GeoHeatmapMap({
         <PredictionMarkers points={points} />
         <FitBounds points={points} />
       </MapContainer>
+      </div>
       <HeatmapLegend />
     </div>
   );

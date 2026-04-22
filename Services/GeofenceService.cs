@@ -1,5 +1,6 @@
 using MauiApp1.ApplicationContracts.Services;
 using MauiApp1.Models;
+using MauiApp1.Services.Observability;
 using Microsoft.Maui.ApplicationModel;
 using Microsoft.Maui.Devices.Sensors;
 using System.Collections.Generic;
@@ -12,6 +13,7 @@ public class GeofenceService : IGeofenceService
 {
     private readonly IAudioPlayerService _audioService;
     private readonly AppState _appState;
+    private readonly IRuntimeTelemetry _telemetry;
     private readonly SemaphoreSlim _gate = new(1, 1);
     private string? _currentActivePoiId;
     private readonly Dictionary<string, DateTime> _lastTriggeredAt = new();
@@ -25,10 +27,11 @@ public class GeofenceService : IGeofenceService
     private double? _lastLon;
     private DateTime _lastLocationTime = DateTime.MinValue;
 
-    public GeofenceService(IAudioPlayerService audioService, AppState appState)
+    public GeofenceService(IAudioPlayerService audioService, AppState appState, IRuntimeTelemetry telemetry)
     {
         _audioService = audioService;
         _appState = appState;
+        _telemetry = telemetry;
 
         // Reset tracking when the global POI set changes (e.g. on language switch or initial load)
         _appState.PoisChanged += (s, e) => ResetInternalTracking();
@@ -181,10 +184,21 @@ public class GeofenceService : IGeofenceService
                 _lastTriggeredAt[poi.Id] = now;
             }
 
+            // Emit POI-linked telemetry for heatmap tracking
+            _telemetry.TryEnqueue(new RuntimeTelemetryEvent(
+                RuntimeTelemetryEventKind.GeofenceEvaluated,
+                DateTime.UtcNow.Ticks,
+                producerId: "geofence",
+                latitude: location.Latitude,
+                longitude: location.Longitude,
+                poiCode: poi.Code,
+                routeOrAction: "poi_entry",
+                detail: $"entry;poi={poi.Code};dist={best.Distance:0.0}m"));
+
             // TODO: Move to UseCase (Stage 4) — proximity selection, cooldown, and narration policy.
             var text = !string.IsNullOrWhiteSpace(poi.Localization?.NarrationShort) ? poi.Localization.NarrationShort : (poi.Localization?.Name ?? "");
             Debug.WriteLine($"[GEOFENCE] Triggering POI id={poi.Id} code={poi.Code} textLen={text?.Length ?? 0}");
-            
+
             // Use global language from AppState
             await _audioService.SpeakAsync(poi.Code, text, _appState.CurrentLanguage, cancellationToken).ConfigureAwait(false);
         }

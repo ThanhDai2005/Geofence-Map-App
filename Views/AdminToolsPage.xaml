@@ -3,14 +3,14 @@
     x:Class="MauiApp1.Views.AdminToolsPage"
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-    Title="Quan tri"
+    Title="Quản trị"
     BackgroundColor="{StaticResource SurfaceBackground}">
 
     <ScrollView>
         <VerticalStackLayout Padding="24" Spacing="16">
-            <Label Text="Quan tri vien"
+            <Label Text="Quản trị viên"
                    Style="{StaticResource PageTitleLabel}" />
-            <Label Text="Bang dieu khien moderation dung AdminWeb hoac API /api/v1/admin/... . Tab nay chi danh cho tai khoan ADMIN."
+            <Label Text="Bảng điều khiển moderation dùng AdminWeb hoặc API /api/v1/admin/... . Tab này chỉ dành cho tài khoản ADMIN."
                    Style="{StaticResource BodyText}" />
         </VerticalStackLayout>
     </ScrollView>

@@ -14,11 +14,23 @@ public partial class PoiDetailPage : ContentPage
         Debug.WriteLine($"[QR-LIFE] PoiDetailPage ctor hash={GetHashCode()}");
     }
 
-    protected override void OnAppearing()
+    protected override async void OnAppearing()
     {
         base.OnAppearing();
         _vm.AttachPreferredLanguageListener();
         Debug.WriteLine($"[QR-LIFE] PoiDetailPage OnAppearing Poi null?={_vm.Poi == null}");
+
+        var content = this.Content;
+        if (content != null)
+        {
+            content.Opacity = 0;
+            content.TranslationY = 20;
+            
+            await Task.WhenAll(
+                content.FadeTo(1, 450, Easing.CubicOut),
+                content.TranslateToAsync(0, 0, 450, Easing.CubicOut)
+            );
+        }
     }
 
     protected override void OnDisappearing()

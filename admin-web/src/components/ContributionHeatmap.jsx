@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { HEATMAP_THRESHOLDS, HEATMAP_COLORS } from '../heatmapConfig.js';
 
 function toIsoDay(d) {
   return d.toISOString().slice(0, 10);
@@ -14,7 +15,8 @@ function normalizeDailyCounts(rows) {
   for (const row of rows || []) {
     const day = row?.date;
     if (!day) continue;
-    const val = Number(row?.total_events) || 0;
+    // Handle both field names from backend (total_events or total_unique_visitors)
+    const val = Number(row?.total_events ?? row?.total_unique_visitors) || 0;
     map.set(day, (map.get(day) || 0) + val);
   }
   return map;
@@ -42,13 +44,13 @@ function startOnMonday(date) {
   return d;
 }
 
-function colorFor(value, maxValue) {
-  if (!value || maxValue <= 0) return '#ebedf0';
-  const ratio = Math.min(1, value / maxValue);
-  if (ratio < 0.25) return '#9be9a8';
-  if (ratio < 0.5) return '#40c463';
-  if (ratio < 0.75) return '#30a14e';
-  return '#216e39';
+function colorFor(value) {
+  if (!value || value <= 0) return HEATMAP_COLORS.EMPTY;
+  if (value < HEATMAP_THRESHOLDS.LEVEL_1) return HEATMAP_COLORS.EMPTY; // Still empty if below level 1
+  if (value < HEATMAP_THRESHOLDS.LEVEL_2) return HEATMAP_COLORS.LEVEL_1;
+  if (value < HEATMAP_THRESHOLDS.LEVEL_3) return HEATMAP_COLORS.LEVEL_2;
+  if (value < HEATMAP_THRESHOLDS.LEVEL_4) return HEATMAP_COLORS.LEVEL_3;
+  return HEATMAP_COLORS.LEVEL_4;
 }
 
 export default function ContributionHeatmap({
@@ -150,7 +152,7 @@ export default function ContributionHeatmap({
                     <div
                       key={cell.iso}
                       className="h-[12px] w-[12px] rounded-[2px] border border-slate-200"
-                      style={{ backgroundColor: cell.inRange ? colorFor(cell.value, maxValue) : '#f8fafc' }}
+                      style={{ backgroundColor: cell.inRange ? colorFor(cell.value) : '#f8fafc' }}
                       title={`${cell.iso}: ${cell.value} lượt`}
                     />
                   ))}
@@ -163,11 +165,11 @@ export default function ContributionHeatmap({
 
       <div className="mt-3 flex items-center justify-end gap-2 text-xs text-slate-500">
         <span>Ít</span>
-        <div className="h-3 w-3 rounded-[2px] border border-slate-200 bg-[#ebedf0]" />
-        <div className="h-3 w-3 rounded-[2px] border border-slate-200 bg-[#9be9a8]" />
-        <div className="h-3 w-3 rounded-[2px] border border-slate-200 bg-[#40c463]" />
-        <div className="h-3 w-3 rounded-[2px] border border-slate-200 bg-[#30a14e]" />
-        <div className="h-3 w-3 rounded-[2px] border border-slate-200 bg-[#216e39]" />
+        <div className="h-3 w-3 rounded-[2px] border border-slate-200" style={{ backgroundColor: HEATMAP_COLORS.EMPTY }} title="0" />
+        <div className="h-3 w-3 rounded-[2px] border border-slate-200" style={{ backgroundColor: HEATMAP_COLORS.LEVEL_1 }} title={`>= ${HEATMAP_THRESHOLDS.LEVEL_1}`} />
+        <div className="h-3 w-3 rounded-[2px] border border-slate-200" style={{ backgroundColor: HEATMAP_COLORS.LEVEL_2 }} title={`>= ${HEATMAP_THRESHOLDS.LEVEL_2}`} />
+        <div className="h-3 w-3 rounded-[2px] border border-slate-200" style={{ backgroundColor: HEATMAP_COLORS.LEVEL_3 }} title={`>= ${HEATMAP_THRESHOLDS.LEVEL_3}`} />
+        <div className="h-3 w-3 rounded-[2px] border border-slate-200" style={{ backgroundColor: HEATMAP_COLORS.LEVEL_4 }} title={`>= ${HEATMAP_THRESHOLDS.LEVEL_4}`} />
         <span>Nhiều</span>
       </div>
     </section>

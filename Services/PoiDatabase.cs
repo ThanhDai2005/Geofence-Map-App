@@ -38,6 +38,9 @@ public class PoiDatabase : IPoiQueryRepository, IPoiCommandRepository, ITranslat
         await _db.ExecuteAsync("CREATE INDEX IF NOT EXISTS IX_pois_Code ON pois(Code)");
         await _db.ExecuteAsync("CREATE INDEX IF NOT EXISTS IX_pois_LanguageCode ON pois(LanguageCode)");
 
+        // Drop unlocked_pois table if it exists (rollback cleanup)
+        try { await _db.ExecuteAsync("DROP TABLE IF EXISTS unlocked_pois"); } catch { }
+
         _inited = true;
     }
 
@@ -186,12 +189,12 @@ public class PoiDatabase : IPoiQueryRepository, IPoiCommandRepository, ITranslat
     {
         cancellationToken.ThrowIfCancellationRequested();
         var all = await GetAllAsync(cancellationToken);
-        
+
         var currentLoc = new Microsoft.Maui.Devices.Sensors.Location(latitude, longitude);
-        return all.Where(p => 
+        return all.Where(p =>
             Microsoft.Maui.Devices.Sensors.Location.CalculateDistance(
-                currentLoc, 
-                new Microsoft.Maui.Devices.Sensors.Location(p.Latitude, p.Longitude), 
+                currentLoc,
+                new Microsoft.Maui.Devices.Sensors.Location(p.Latitude, p.Longitude),
                 Microsoft.Maui.Devices.Sensors.DistanceUnits.Kilometers) <= radiusInMeters / 1000.0
         ).ToList();
     }

@@ -5,7 +5,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     xmlns:vm="clr-namespace:MauiApp1.ViewModels"
     x:DataType="vm:ProfileViewModel"
-    Title="Tai khoan"
+    Title="Tài khoản"
     BackgroundColor="{StaticResource SurfaceBackground}">
 
     <ScrollView>
@@ -13,7 +13,7 @@
 
             <Border Style="{StaticResource CardBorder}">
                 <VerticalStackLayout Spacing="10">
-                    <Label Text="Thong tin dang nhap"
+                    <Label Text="Thông tin đăng nhập"
                            Style="{StaticResource SectionTitle}" />
 
                     <Label Text="{Binding DisplayEmail}"
@@ -38,7 +38,7 @@
                 </VerticalStackLayout>
             </Border>
 
-            <Button Text="Dang nhap"
+            <Button Text="Đăng nhập"
                     Style="{StaticResource PrimaryButton}"
                     Command="{Binding LoginCommand}"
                     IsVisible="{Binding IsNotLoggedIn}" />
@@ -61,9 +61,9 @@
             <Border Style="{StaticResource CardBorder}"
                     IsVisible="{Binding ShowAdminSection}">
                 <VerticalStackLayout Spacing="8">
-                    <Label Text="Quan tri (ADMIN)"
+                    <Label Text="Quản trị (ADMIN)"
                            Style="{StaticResource SectionTitle}" />
-                    <Label Text="Bang dieu khien: mo tab 'Quan tri' ben duoi (Web/API san sang)."
+                    <Label Text="Bảng điều khiển: mở tab 'Quản trị' bên dưới (Web/API sẵn sàng)."
                            Style="{StaticResource BodyText}" />
                 </VerticalStackLayout>
             </Border>

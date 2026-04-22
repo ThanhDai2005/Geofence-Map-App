@@ -113,6 +113,7 @@ public sealed class TranslationOrchestrator
             Longitude = geo?.Longitude,
             GeoRadiusMeters = geo is { Radius: > 0 } ? geo.Radius : null,
             GeoSource = geo != null ? EventGeoSource.Db : EventGeoSource.Unknown,
+            PoiId = geo?.Id,
             BatchItemCount = null
         });
     }

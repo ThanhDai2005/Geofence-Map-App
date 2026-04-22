@@ -220,7 +220,7 @@ public class PoiDetailViewModel : INotifyPropertyChanged, IQueryAttributable
 
             // Attach localization from in-memory lookup
             var locResult = _locService.GetLocalizationResult(_lastLoadedCode, effectiveLang);
-            
+
             // New Poi instance — ensures MAUI bindings update
             var poi = new Poi
             {
@@ -235,7 +235,7 @@ public class PoiDetailViewModel : INotifyPropertyChanged, IQueryAttributable
                 RequestedLanguage = locResult.RequestedLang
             };
             poi.Localization = locResult.Localization;
-            
+
             await MainThread.InvokeOnMainThreadAsync(async () =>
             {
                 Poi = poi;
@@ -246,7 +246,7 @@ public class PoiDetailViewModel : INotifyPropertyChanged, IQueryAttributable
 
             Debug.WriteLine($"[POI-DETAIL] LoadPoiAsync completed for {_lastLoadedCode}");
         }
-        catch (OperationCanceledException) 
+        catch (OperationCanceledException)
         {
             Debug.WriteLine($"[POI-DETAIL] Loading cancelled for {code}");
         }
@@ -284,7 +284,7 @@ public class PoiDetailViewModel : INotifyPropertyChanged, IQueryAttributable
     }
 
     /// <summary>
-    /// Plays the LONG detailed narration. 
+    /// Plays the LONG detailed narration.
     /// Premium users: full NarrationLong TTS.
     /// Free users: dialog explaining Premium + optional local upgrade (demo).
     /// </summary>

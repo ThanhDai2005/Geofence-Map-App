@@ -69,6 +69,9 @@ public sealed class TranslationEvent
     /// <summary>POI or device longitude snapshot at emission (immutable).</summary>
     public double? Longitude { get; init; }
 
+    /// <summary>Authority POI ID to resolve ground-truth geo on backend.</summary>
+    public string? PoiId { get; init; }
+
     /// <summary>POI radius in meters when anchored to a POI row or QR payload (immutable).</summary>
     public double? GeoRadiusMeters { get; init; }
 

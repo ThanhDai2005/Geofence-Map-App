@@ -1,4 +1,4 @@
-﻿using MauiApp1.Views;
+using MauiApp1.Views;
 using MauiApp1.Services;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -23,14 +23,14 @@ public partial class AppShell : Shell
 
         tabBar.Items.Add(new ShellContent
         {
-            Title = "Kham pha",
+            Title = "Khám phá",
             Route = "explore",
             ContentTemplate = new DataTemplate(() => services.GetRequiredService<ExplorePage>())
         });
 
         tabBar.Items.Add(new ShellContent
         {
-            Title = "Ban do",
+            Title = "Bản đồ",
             Route = "map",
             ContentTemplate = new DataTemplate(() => services.GetRequiredService<MapPage>())
         });
@@ -44,14 +44,14 @@ public partial class AppShell : Shell
 
         tabBar.Items.Add(new ShellContent
         {
-            Title = "Tai khoan",
+            Title = "Tài khoản",
             Route = "profile",
             ContentTemplate = new DataTemplate(() => services.GetRequiredService<ProfilePage>())
         });
 
         _adminTab = new ShellContent
         {
-            Title = "Quan tri",
+            Title = "Quản trị",
             Route = "admintools",
             ContentTemplate = new DataTemplate(() => services.GetRequiredService<AdminToolsPage>())
         };
@@ -60,7 +60,7 @@ public partial class AppShell : Shell
 
         tabBar.Items.Add(new ShellContent
         {
-            Title = "Gioi thieu",
+            Title = "Giới thiệu",
             Route = "about",
             ContentTemplate = new DataTemplate(() => services.GetRequiredService<AboutPage>())
         });

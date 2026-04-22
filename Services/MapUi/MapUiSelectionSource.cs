@@ -13,6 +13,7 @@ public enum MapUiSelectionSource : int
     NarrationSync = 160,
 
     /// <summary>Progressive translation completed and updated the POI instance.</summary>
+
     TranslationSync = 165,
 
     /// <summary>Two-way binding or legacy call sites without a finer source.</summary>

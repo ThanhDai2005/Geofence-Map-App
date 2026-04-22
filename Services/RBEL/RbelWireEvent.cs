@@ -34,4 +34,6 @@ public sealed class RbelWireEvent
     [JsonPropertyName("timestamp")] public DateTimeOffset Timestamp { get; set; }
 
     [JsonPropertyName("payload")] public Dictionary<string, object?> Payload { get; set; } = new();
+
+    [JsonPropertyName("poiId")] public string? PoiId { get; set; }
 }
