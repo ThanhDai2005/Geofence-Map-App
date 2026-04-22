@@ -30,6 +30,7 @@ public class QrScannerViewModel : INotifyPropertyChanged
     private readonly IQrScannerService _qr;
     private readonly MapViewModel _mapVm;
     private readonly INavigationService _navService;
+    private readonly QrScanLimitService _scanLimit;
 
     private bool _isHandlingScan;
     private CancellationTokenSource? _errorResetCts;
@@ -49,12 +50,13 @@ public class QrScannerViewModel : INotifyPropertyChanged
     private DateTime _lastSubmittedUtc = DateTime.MinValue;
     private const int SamePayloadDebounceMs = 1200;
 
-    public QrScannerViewModel(IPoiEntryCoordinator coordinator, IQrScannerService qr, MapViewModel mapVm, INavigationService navService)
+    public QrScannerViewModel(IPoiEntryCoordinator coordinator, IQrScannerService qr, MapViewModel mapVm, INavigationService navService, QrScanLimitService scanLimit)
     {
         _coordinator = coordinator;
         _qr = qr;
         _mapVm = mapVm;
         _navService = navService;
+        _scanLimit = scanLimit;
         ScanCommand = new Command(async () => await ScanAsync(), () => !IsProcessingScan);
         CancelCommand = new Command(async () => await CancelAsync());
     }
@@ -183,6 +185,17 @@ public class QrScannerViewModel : INotifyPropertyChanged
             return false;
         }
 
+        // Kiểm tra giới hạn quét
+        if (!_scanLimit.CanScan())
+        {
+            Debug.WriteLine($"[QR-SCAN] Scan limit reached source={source}");
+            UxStatusText = "Đã hết lượt quét hôm nay";
+            UxDetailError = _scanLimit.GetLimitMessage();
+            ApplyPhase(QrScannerUxPhase.InvalidFormat);
+            ScheduleErrorResetToReady(3500);
+            return false;
+        }
+
         var trimmedRaw = (rawText ?? string.Empty).Trim();
         if (trimmedRaw.Length > 0 &&
             string.Equals(trimmedRaw, _lastSubmittedRaw, StringComparison.Ordinal) &&
@@ -255,11 +268,15 @@ public class QrScannerViewModel : INotifyPropertyChanged
             }
 
             success = true;
+
+            // Tăng số lần quét sau khi quét thành công
+            _scanLimit.IncrementScanCount();
+
             var preview = await _qr.ParseAsync(rawText, token).ConfigureAwait(false);
             var key = preview.Success ? preview.Code! : trimmedRaw;
             _lastAcceptedNormalizedKey = key;
             _lastAcceptedAtUtc = DateTime.UtcNow;
-            Debug.WriteLine($"[QR-SCAN] Accepted scan value={key} source={source}");
+            Debug.WriteLine($"[QR-SCAN] Accepted scan value={key} source={source} remaining={_scanLimit.GetRemainingScans()}");
             Debug.WriteLine("[QR-NAV] Navigation completed (coordinator returned success)");
             return true;
         }

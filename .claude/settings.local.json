@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dotnet build *)",
+      "Bash(dotnet clean *)",
+      "Bash(where ngrok *)",
+      "Read(//c/Users/admin/**)",
+      "Bash(cat .ngrok2/ngrok.yml)",
+      "Bash(ngrok config *)",
+      "Bash(curl -o ngrok.zip https://bin.equinox.io/c/bNyj1mQVY4c/ngrok-v3-stable-windows-amd64.zip)",
+      "Bash(unzip -o ngrok.zip)",
+      "Bash(./ngrok.exe config *)",
+      "Bash(./ngrok.exe http *)",
+      "Bash(curl -s http://localhost:4040/api/tunnels)"
+    ]
+  }
+}

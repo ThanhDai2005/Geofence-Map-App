@@ -155,10 +155,19 @@ public sealed class RegisterViewModel : INotifyPropertyChanged
             {
                 await MainThread.InvokeOnMainThreadAsync(() =>
                 {
-                    if (global::Microsoft.Maui.Controls.Application.Current?.MainPage is Shell)
-                        _ = _nav.PopModalAsync();
-                    else if (global::Microsoft.Maui.Controls.Application.Current?.MainPage is NavigationPage)
+                    // Sau khi đăng ký thành công, chuyển đến AppShell và mở tab profile
+                    if (global::Microsoft.Maui.Controls.Application.Current?.MainPage is NavigationPage)
+                    {
                         global::Microsoft.Maui.Controls.Application.Current!.MainPage = _services.GetRequiredService<MauiApp1.AppShell>();
+                        // Navigate to profile tab
+                        _ = Shell.Current.GoToAsync("//profile");
+                    }
+                    else if (global::Microsoft.Maui.Controls.Application.Current?.MainPage is Shell)
+                    {
+                        _ = _nav.PopModalAsync();
+                        // Navigate to profile tab
+                        _ = Shell.Current.GoToAsync("//profile");
+                    }
                 }).ConfigureAwait(false);
             }
         }

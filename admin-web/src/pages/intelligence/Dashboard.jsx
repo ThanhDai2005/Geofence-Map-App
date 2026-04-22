@@ -286,54 +286,6 @@ export default function IntelligenceDashboard() {
               </ResponsiveContainer>
             </div>
           </section>
-
-          <div className="grid gap-8 lg:grid-cols-2">
-            <section>
-              <h2 className="text-lg font-medium text-slate-800">Theo loại sự kiện</h2>
-              <div className="mt-3 h-72 w-full rounded-xl border border-slate-200 bg-white p-4">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={familyBarData} margin={{ top: 8, right: 8, left: 0, bottom: 48 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                    <XAxis dataKey="name" angle={-28} textAnchor="end" interval={0} height={56} tick={{ fontSize: 10 }} />
-                    <YAxis allowDecimals={false} tick={{ fontSize: 11 }} />
-                    <Tooltip />
-                    <Bar dataKey="total_events" name="Số sự kiện" fill="#0d9488" radius={[4, 4, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </section>
-
-            <section>
-              <h2 className="text-lg font-medium text-slate-800">Theo trạng thái đăng nhập</h2>
-              <div className="mt-3 h-72 w-full rounded-xl border border-slate-200 bg-white p-4">
-                {authPieData.length === 0 ? (
-                  <p className="flex h-full items-center justify-center text-sm text-slate-500">Không có dữ liệu</p>
-                ) : (
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={authPieData}
-                        dataKey="value"
-                        nameKey="name"
-                        cx="50%"
-                        cy="50%"
-                        outerRadius={100}
-                        label={({ name, percent }) =>
-                          `${name} ${percent != null ? (percent * 100).toFixed(0) : 0}%`
-                        }
-                      >
-                        {authPieData.map((_, i) => (
-                          <Cell key={String(i)} fill={PIE_COLORS[i % PIE_COLORS.length]} />
-                        ))}
-                      </Pie>
-                      <Tooltip />
-                      <Legend />
-                    </PieChart>
-                  </ResponsiveContainer>
-                )}
-              </div>
-            </section>
-          </div>
         </div>
       )}
     </div>

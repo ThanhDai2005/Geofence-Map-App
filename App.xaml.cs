@@ -69,6 +69,24 @@ public partial class App : Microsoft.Maui.Controls.Application
             catch { }
         });
 
+        // Gửi heartbeat ngay khi app khởi động để hiện online nhanh
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                var presence = services.GetService<DevicePresenceService>();
+                if (presence != null)
+                {
+                    await presence.SendHeartbeatAsync().ConfigureAwait(false);
+                    System.Diagnostics.Debug.WriteLine("[PRESENCE] Initial heartbeat sent on app startup");
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[PRESENCE] Initial heartbeat failed: {ex.Message}");
+            }
+        });
+
         StartBackgroundServices();
 
         System.Diagnostics.Debug.WriteLine("[DeepLink] App constructor exit");

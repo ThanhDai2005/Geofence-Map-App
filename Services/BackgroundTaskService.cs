@@ -206,12 +206,24 @@ public class BackgroundTaskService
 
     private async Task RunDevicePresenceLoopAsync(CancellationToken ct)
     {
+        // Gửi heartbeat ngay lập tức khi loop bắt đầu
+        try
+        {
+            await _devicePresenceService.SendHeartbeatAsync(ct);
+            Debug.WriteLine("[PRESENCE] Initial heartbeat sent in background loop");
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[PRESENCE] Initial heartbeat error: {ex.Message}");
+        }
+
         while (!ct.IsCancellationRequested)
         {
             try
             {
+                // Giảm interval từ 12s xuống 5s để cập nhật nhanh hơn
+                await Task.Delay(5000, ct);
                 await _devicePresenceService.SendHeartbeatAsync(ct);
-                await Task.Delay(12000, ct);
             }
             catch (OperationCanceledException)
             {
@@ -220,7 +232,7 @@ public class BackgroundTaskService
             catch (Exception ex)
             {
                 Debug.WriteLine($"[BACK-SVC] Device presence loop error: {ex.Message}");
-                await Task.Delay(5000, ct);
+                await Task.Delay(3000, ct);
             }
         }
     }

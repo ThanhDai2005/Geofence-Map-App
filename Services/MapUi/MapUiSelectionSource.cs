@@ -12,6 +12,9 @@ public enum MapUiSelectionSource : int
     /// <summary>Narration / translation produced a new hydrated instance for the same code.</summary>
     NarrationSync = 160,
 
+    /// <summary>Progressive translation completed and updated the POI instance.</summary>
+    TranslationSync = 165,
+
     /// <summary>Two-way binding or legacy call sites without a finer source.</summary>
     DataBindingOrUnknown = 250,
 

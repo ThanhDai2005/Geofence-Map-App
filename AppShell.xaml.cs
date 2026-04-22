@@ -68,6 +68,7 @@ public partial class AppShell : Shell
         Items.Add(tabBar);
 
         Routing.RegisterRoute("poidetail", typeof(PoiDetailPage));
+        Routing.RegisterRoute("register", typeof(RegisterPage));
 
         _auth.SessionChanged += (_, _) => MainThread.BeginInvokeOnMainThread(UpdateRoleTabs);
         _auth.PropertyChanged += (_, e) =>

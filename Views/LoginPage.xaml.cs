@@ -19,8 +19,34 @@ public partial class LoginPage : ContentPage
 
     private async void OnOpenRegisterClicked(object sender, EventArgs e)
     {
-        var page = _services.GetRequiredService<RegisterPage>();
-        await Navigation.PushAsync(page);
+        try
+        {
+            var page = _services.GetRequiredService<RegisterPage>();
+
+            // Kiểm tra xem có navigation stack không
+            if (Navigation != null && Navigation.NavigationStack.Count > 0)
+            {
+                await Navigation.PushAsync(page);
+            }
+            else
+            {
+                // Fallback: sử dụng navigation service
+                await _nav.NavigateToAsync("register");
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[LOGIN] OnOpenRegisterClicked error: {ex.Message}");
+            // Thử phương án khác
+            try
+            {
+                await _nav.NavigateToAsync("register");
+            }
+            catch (Exception ex2)
+            {
+                System.Diagnostics.Debug.WriteLine($"[LOGIN] Navigation fallback error: {ex2.Message}");
+            }
+        }
     }
 
     private void OnCloseClicked(object sender, EventArgs e)

@@ -76,6 +76,7 @@ public static class MauiProgram
 
         builder.Services.AddSingleton<QrScannerService>();
         builder.Services.AddSingleton<IQrScannerService>(sp => sp.GetRequiredService<QrScannerService>());
+        builder.Services.AddSingleton<QrScanLimitService>();
 
         builder.Services.AddSingleton<PoiEntryCoordinator>();
         builder.Services.AddSingleton<IPoiEntryCoordinator>(sp => sp.GetRequiredService<PoiEntryCoordinator>());
