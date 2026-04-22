@@ -8,7 +8,15 @@ class UserRepository {
     async findById(id) {
         return await User.findById(id);
     }
-    
+
+    async updateUser(userId, updates) {
+        return await User.findByIdAndUpdate(
+            userId,
+            updates,
+            { new: true, runValidators: true }
+        ).select('-password');
+    }
+
     async updatePremiumStatus(userId, isPremium) {
         return await User.findByIdAndUpdate(userId, { isPremium }, { new: true });
     }

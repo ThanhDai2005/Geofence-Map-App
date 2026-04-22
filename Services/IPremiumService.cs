@@ -6,4 +6,5 @@ namespace MauiApp1.Services;
 public interface IPremiumService
 {
     bool IsPremium { get; set; }
+    Task<bool> ActivatePremiumAsync();
 }

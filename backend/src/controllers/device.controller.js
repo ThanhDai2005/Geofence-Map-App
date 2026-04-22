@@ -2,7 +2,8 @@ const { AppError } = require('../middlewares/error.middleware');
 const deviceSessionRepository = require('../repositories/device-session.repository');
 
 // Must exceed heartbeat interval + network jitter, or admin UI flickers offline between beats.
-const ONLINE_GRACE_MS = 25 * 1000;
+// Giảm từ 25s xuống 8s để phản ánh trạng thái offline nhanh hơn (heartbeat interval = 3s)
+const ONLINE_GRACE_MS = 8 * 1000;
 
 function getClientIp(req) {
     const forwarded = req.headers['x-forwarded-for'];

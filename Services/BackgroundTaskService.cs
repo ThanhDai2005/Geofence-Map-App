@@ -221,8 +221,8 @@ public class BackgroundTaskService
         {
             try
             {
-                // Giảm interval từ 12s xuống 5s để cập nhật nhanh hơn
-                await Task.Delay(5000, ct);
+                // Giảm interval từ 5s xuống 3s để cập nhật nhanh hơn
+                await Task.Delay(3000, ct);
                 await _devicePresenceService.SendHeartbeatAsync(ct);
             }
             catch (OperationCanceledException)
@@ -232,7 +232,7 @@ public class BackgroundTaskService
             catch (Exception ex)
             {
                 Debug.WriteLine($"[BACK-SVC] Device presence loop error: {ex.Message}");
-                await Task.Delay(3000, ct);
+                await Task.Delay(2000, ct);
             }
         }
     }

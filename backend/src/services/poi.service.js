@@ -18,7 +18,7 @@ setInterval(() => poiCache.cleanup(), 3600000);
 setInterval(() => ownerPoiSubmissionCache.cleanup(), 60000);
 
 class PoiService {
-    static USER_QR_SCAN_LIMIT = 10;
+    static USER_QR_SCAN_LIMIT = 20;
     _extractViContent(poi) {
         const fallbackFromLegacy = (() => {
             const legacyVi = poi?.content?.vi;
@@ -705,14 +705,14 @@ class PoiService {
             throw new AppError('Premium subscription required for this POI', 403);
         }
 
-        // Non-premium logged-in users: max 10 scans total. Premium users: unlimited.
+        // Non-premium logged-in users: max 20 scans total. Premium users: unlimited.
         if (user && !user.isPremium) {
             const updated = await userRepository.incrementQrScanCountIfAllowed(
                 user._id,
                 PoiService.USER_QR_SCAN_LIMIT
             );
             if (!updated) {
-                throw new AppError('Bạn đã dùng hết 10 lượt quét QR miễn phí. Vui lòng nâng cấp VIP để quét không giới hạn.', 403);
+                throw new AppError('Bạn đã dùng hết 20 lượt quét QR miễn phí. Vui lòng nâng cấp VIP để quét không giới hạn.', 403);
             }
         }
 

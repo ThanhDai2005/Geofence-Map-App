@@ -43,6 +43,16 @@ public sealed class LoginApiEnvelope
     public LoginResponseDto? Data { get; set; }
 }
 
+/// <summary>Response envelope for GET /auth/me</summary>
+public sealed class MeApiEnvelope
+{
+    [JsonPropertyName("success")]
+    public bool Success { get; set; }
+
+    [JsonPropertyName("data")]
+    public UserDto? Data { get; set; }
+}
+
 public sealed class UserDto
 {
     [JsonPropertyName("id")]

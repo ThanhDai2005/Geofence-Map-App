@@ -24,6 +24,7 @@ public class PoiDetailViewModel : INotifyPropertyChanged, IQueryAttributable
     private readonly AppState                _appState;
     private readonly AuthService             _auth;
     private readonly IMapUiStateArbitrator    _mapUi;
+    private readonly IPremiumService          _premiumService;
 
     public System.Windows.Input.ICommand UpgradeCommand { get; }
 
@@ -41,7 +42,8 @@ public class PoiDetailViewModel : INotifyPropertyChanged, IQueryAttributable
         INavigationService navService,
         AppState appState,
         AuthService auth,
-        IMapUiStateArbitrator mapUi)
+        IMapUiStateArbitrator mapUi,
+        IPremiumService premiumService)
     {
         _getPoiDetailUseCase = getPoiDetailUseCase;
         _playPoiAudioUseCase = playPoiAudioUseCase;
@@ -53,6 +55,7 @@ public class PoiDetailViewModel : INotifyPropertyChanged, IQueryAttributable
         _appState         = appState;
         _auth             = auth;
         _mapUi            = mapUi;
+        _premiumService   = premiumService;
 
         UpgradeCommand = new Command(async () => await UpgradeAsync());
         _auth.PropertyChanged += (_, e) =>
@@ -305,9 +308,9 @@ public class PoiDetailViewModel : INotifyPropertyChanged, IQueryAttributable
                 }
 
                 return await page.DisplayAlertAsync(
-                    "Gói Premium",
-                    "Thuyết minh chi tiết (bản đầy đủ) chỉ dành cho tài khoản Premium. Bạn có thể nâng cấp để nghe toàn bộ nội dung tại mọi địa điểm.",
-                    "Nâng cấp",
+                    "✨ Trải nghiệm Đặc quyền Premium",
+                    "Khám phá những câu chuyện chuyên sâu và bí mật ẩn sau địa điểm này với bản thuyết minh chi tiết dành riêng cho thành viên Premium.",
+                    "Mở khóa ngay",
                     "Để sau");
             }).ConfigureAwait(false);
 
@@ -330,20 +333,56 @@ public class PoiDetailViewModel : INotifyPropertyChanged, IQueryAttributable
 
     public async Task UpgradeAsync()
     {
-        await _auth.UpdateStoredPremiumAsync(true).ConfigureAwait(false);
-        Debug.WriteLine("[PREMIUM] User upgraded to premium state (local flag).");
-
-        await MainThread.InvokeOnMainThreadAsync(async () =>
+        try
         {
-            var page = ResolveAlertPage();
-            if (page != null)
+            System.Diagnostics.Debug.WriteLine("[POI_DETAIL] UpgradeAsync: calling premium service...");
+            var success = await _premiumService.ActivatePremiumAsync().ConfigureAwait(false);
+
+            if (!success)
             {
-                await page.DisplayAlertAsync(
-                    "Chúc mừng!",
-                    "Bạn đã mở khóa gói Premium. Giờ có thể bấm \"Nghe chi tiết\" để nghe bản thuyết minh đầy đủ.",
-                    "Tuyệt vời");
+                await MainThread.InvokeOnMainThreadAsync(async () =>
+                {
+                    var page = ResolveAlertPage();
+                    if (page != null)
+                    {
+                        await page.DisplayAlertAsync(
+                            "Lỗi",
+                            "Không thể nâng cấp Premium. Vui lòng thử lại.",
+                            "OK");
+                    }
+                });
+                return;
             }
-        });
+
+            Debug.WriteLine("[POI_DETAIL] User upgraded to premium via API.");
+
+            await MainThread.InvokeOnMainThreadAsync(async () =>
+            {
+                var page = ResolveAlertPage();
+                if (page != null)
+                {
+                    await page.DisplayAlertAsync(
+                        "🎉 Chào mừng Thành viên mới!",
+                        "Bạn đã kích hoạt thành công Đặc quyền Premium. Giờ đây, mọi câu chuyện chuyên sâu đã sẵn sàng chờ bạn khám phá. Thưởng thức ngay nhé!",
+                        "Bắt đầu trải nghiệm");
+                }
+            });
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[POI_DETAIL] UpgradeAsync error: {ex}");
+            await MainThread.InvokeOnMainThreadAsync(async () =>
+            {
+                var page = ResolveAlertPage();
+                if (page != null)
+                {
+                    await page.DisplayAlertAsync(
+                        "🔔 Thông báo",
+                        "Dịch vụ đang bận xử lý, vui lòng thử lại sau giây lát.",
+                        "OK");
+                }
+            });
+        }
     }
 
     /// <summary>Trang đang hiển thị (Shell push) — tránh Windows[0].Page không phải PoiDetail khiến alert không hiện.</summary>

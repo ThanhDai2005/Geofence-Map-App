@@ -48,6 +48,12 @@
                     Command="{Binding LogoutCommand}"
                     IsVisible="{Binding IsLoggedIn}" />
 
+            <Button Text="🚀 Mở khóa Đặc quyền Premium"
+                    Style="{StaticResource PrimaryButton}"
+                    Command="{Binding UpgradePremiumCommand}"
+                    IsVisible="{Binding CanUpgradePremium}"
+                    BackgroundColor="{StaticResource NatureEmerald}" />
+
             <Border Style="{StaticResource CardBorder}"
                     IsVisible="{Binding ShowOwnerSection}">
                 <VerticalStackLayout Spacing="8">

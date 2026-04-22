@@ -168,6 +168,7 @@ export default function UserManagementPage() {
                 <th className="px-4 py-3 font-medium">Email</th>
                 <th className="px-4 py-3 font-medium">Họ tên</th>
                 <th className="px-4 py-3 font-medium">Vai trò</th>
+                <th className="px-4 py-3 font-medium">Gói</th>
                 <th className="px-4 py-3 font-medium">Lượt quét QR</th>
                 <th className="px-4 py-3 font-medium">Trạng thái</th>
                 <th className="px-4 py-3 font-medium text-right">Hành động</th>
@@ -184,6 +185,17 @@ export default function UserManagementPage() {
                     <td className="px-4 py-3">
                       <span className="inline-flex min-w-[70px] justify-center rounded-lg border border-slate-200 bg-slate-50 px-2 py-1 text-xs font-semibold text-slate-700">
                         {row.role || 'USER'}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3">
+                      <span
+                        className={
+                          row.isPremium === true
+                            ? 'rounded-full bg-amber-100 px-2.5 py-1 text-xs font-bold text-amber-800'
+                            : 'rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600'
+                        }
+                      >
+                        {row.isPremium === true ? 'Premium' : 'Thường'}
                       </span>
                     </td>
                     <td className="px-4 py-3 text-slate-800">{Number(row.qrScanCount || 0)}</td>

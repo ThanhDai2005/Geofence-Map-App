@@ -49,13 +49,22 @@ public sealed class DevicePresenceService
         try
         {
             var payload = new { deviceId = GetOrCreateDeviceId() };
+
+            // Tạo timeout ngắn để gửi offline nhanh chóng
+            using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            cts.CancelAfter(TimeSpan.FromSeconds(2));
+
             using var response = await _apiService
-                .PostAsJsonAsync("devices/offline", payload, cancellationToken)
+                .PostAsJsonAsync("devices/offline", payload, cts.Token)
                 .ConfigureAwait(false);
             if (!response.IsSuccessStatusCode)
             {
-                var body = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+                var body = await response.Content.ReadAsStringAsync(cts.Token).ConfigureAwait(false);
                 Debug.WriteLine($"[PRESENCE] Offline failed: {(int)response.StatusCode} {body}");
+            }
+            else
+            {
+                Debug.WriteLine("[PRESENCE] Offline sent successfully");
             }
         }
         catch (Exception ex)

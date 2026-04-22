@@ -17,6 +17,7 @@ public sealed class AuthService : INotifyPropertyChanged
 
     private readonly HttpClient _loginHttpClient;
     private readonly AuthTokenStore _tokenStore;
+    private HttpClient? _protectedHttpClient;
 
     private string? _email;
     private string _role = "USER";
@@ -28,6 +29,11 @@ public sealed class AuthService : INotifyPropertyChanged
     {
         _loginHttpClient = loginHttpClient;
         _tokenStore = tokenStore;
+    }
+
+    public void SetProtectedHttpClient(HttpClient protectedHttpClient)
+    {
+        _protectedHttpClient = protectedHttpClient;
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;
@@ -230,6 +236,52 @@ public sealed class AuthService : INotifyPropertyChanged
 
         _isPremium = isPremium;
         OnPropertyChanged(nameof(IsPremium));
+    }
+
+    /// <summary>Refresh premium status from backend after purchase.</summary>
+    public async Task RefreshPremiumStatusAsync(CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            if (_protectedHttpClient == null)
+            {
+                System.Diagnostics.Debug.WriteLine("[AUTH] RefreshPremiumStatusAsync: no protected client");
+                return;
+            }
+
+            var response = await _protectedHttpClient.GetAsync("auth/me", cancellationToken).ConfigureAwait(false);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                System.Diagnostics.Debug.WriteLine($"[AUTH] RefreshPremiumStatusAsync failed: {response.StatusCode}");
+                return;
+            }
+
+            var envelope = await response.Content.ReadFromJsonAsync<MeApiEnvelope>(JsonOptions, cancellationToken).ConfigureAwait(false);
+            var userData = envelope?.Data;
+
+            if (userData == null)
+            {
+                System.Diagnostics.Debug.WriteLine("[AUTH] RefreshPremiumStatusAsync: no user data");
+                return;
+            }
+
+            // Cập nhật isPremium từ backend
+            await UpdateStoredPremiumAsync(userData.IsPremium, cancellationToken).ConfigureAwait(false);
+
+            // Cập nhật role nếu có thay đổi
+            if (!string.IsNullOrEmpty(userData.Role) && userData.Role != _role)
+            {
+                await SecureStorage.Default.SetAsync(StorageKeyRole, userData.Role).ConfigureAwait(false);
+                Role = userData.Role;
+            }
+
+            System.Diagnostics.Debug.WriteLine($"[AUTH] RefreshPremiumStatusAsync: isPremium={userData.IsPremium}");
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[AUTH] RefreshPremiumStatusAsync error: {ex}");
+        }
     }
 
     /// <summary>Called by <see cref="AuthDelegatingHandler"/> when a protected call returns 401.</summary>

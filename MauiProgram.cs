@@ -218,7 +218,13 @@ public static class MauiProgram
                 BaseAddress = apiBase,
                 Timeout = TimeSpan.FromSeconds(45)
             };
-            return new ApiService(client);
+            var apiService = new ApiService(client);
+
+            // Inject protected HttpClient vào AuthService để gọi /auth/me
+            var authService = sp.GetRequiredService<AuthService>();
+            authService.SetProtectedHttpClient(client);
+
+            return apiService;
         });
 
         builder.Services.AddSingleton<SessionAuthRepository>();

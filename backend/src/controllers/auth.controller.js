@@ -1,11 +1,12 @@
 const authService = require('../services/auth.service');
+const userRepository = require('../repositories/user.repository');
 
 exports.login = async (req, res, next) => {
     try {
         const { email, password } = req.body;
-        
+
         const result = await authService.login(email, password);
-        
+
         res.status(200).json({
             success: true,
             data: result
@@ -22,6 +23,30 @@ exports.register = async (req, res, next) => {
         res.status(201).json({
             success: true,
             data: result
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+exports.getMe = async (req, res, next) => {
+    try {
+        const userId = req.user._id;
+        const user = await userRepository.findById(userId);
+
+        if (!user) {
+            return res.status(404).json({ success: false, message: 'User not found' });
+        }
+
+        res.status(200).json({
+            success: true,
+            data: {
+                id: user._id.toString(),
+                email: user.email,
+                fullName: user.fullName,
+                role: user.role,
+                isPremium: user.isPremium
+            }
         });
     } catch (error) {
         next(error);

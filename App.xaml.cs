@@ -130,18 +130,20 @@ public partial class App : Microsoft.Maui.Controls.Application
         }
         catch { }
 
-        base.OnSleep();
+        // Gửi offline TRƯỚC khi stop background services để đảm bảo gửi được
         try
         {
             // Best effort: notify backend immediately so Admin device screen flips to Offline right away.
             _services.GetService<DevicePresenceService>()?
                 .SendOfflineAsync()
-                .Wait(1200);
+                .Wait(2000);
         }
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"[PRESENCE] Immediate offline on sleep failed: {ex}");
         }
+
+        base.OnSleep();
         StopBackgroundServices();
     }
 
