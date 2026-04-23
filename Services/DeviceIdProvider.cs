@@ -34,4 +34,9 @@ public sealed class DeviceIdProvider : IDeviceIdProvider
             _gate.Release();
         }
     }
+
+    public async Task<string> GetDeviceIdAsync(CancellationToken cancellationToken = default)
+    {
+        return await GetOrCreateDeviceIdAsync(cancellationToken).ConfigureAwait(false);
+    }
 }

@@ -14,6 +14,7 @@ const adminPoiRoutes = require('./routes/admin-poi.routes');
 const adminUserRoutes = require('./routes/admin-user.routes');
 const intelligenceAdminRoutes = require('./routes/intelligence-admin.routes');
 const deviceRoutes = require('./routes/device.routes');
+const audioQueueRoutes = require('./routes/audio-queue.routes');
 
 const app = express();
 
@@ -57,6 +58,7 @@ app.use('/api/v1/admin/pois', adminPoiRoutes);
 app.use('/api/v1/admin/users', adminUserRoutes);
 app.use('/api/v1/admin/intelligence', intelligenceAdminRoutes);
 app.use('/api/v1/devices', deviceRoutes);
+app.use('/api/v1/audio-queue', audioQueueRoutes);
 
 // 404 Route Handler
 app.use((req, res, next) => {

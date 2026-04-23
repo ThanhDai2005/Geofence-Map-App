@@ -27,6 +27,7 @@ namespace MauiApp1.Services;
 public class PoiNarrationService
 {
     private readonly IAudioPlayerService _audioService;
+    private readonly IAudioQueueService _audioQueue;
     private readonly ILocalizationService _locService;
     private readonly TranslationQueueService _translationQueue;
     private readonly TranslationOrchestrator _translationOrchestrator;
@@ -36,9 +37,11 @@ public class PoiNarrationService
     private readonly IRuntimeTelemetry _telemetry;
     private readonly ILogger<PoiNarrationService> _logger;
     private readonly SemaphoreSlim _translationGate = new(1, 1);
+    private bool _isQueueMode = false;
 
     public PoiNarrationService(
         IAudioPlayerService audioService,
+        IAudioQueueService audioQueue,
         ILocalizationService locService,
         TranslationOrchestrator translationOrchestrator,
         IPoiQueryRepository poiQuery,
@@ -49,6 +52,7 @@ public class PoiNarrationService
         ILogger<PoiNarrationService> logger)
     {
         _audioService = audioService;
+        _audioQueue = audioQueue;
         _locService = locService;
         _translationQueue = translationQueue;
         _translationOrchestrator = translationOrchestrator;
@@ -57,6 +61,10 @@ public class PoiNarrationService
         _mapUi = mapUi;
         _telemetry = telemetry;
         _logger = logger;
+
+        // Subscribe to audio queue events
+        _audioQueue.AudioStartRequested += OnAudioStartRequested;
+        _audioQueue.QueueStatusUpdated += OnQueueStatusUpdated;
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -67,6 +75,7 @@ public class PoiNarrationService
     /// Plays short narration for <paramref name="poi"/>.
     /// Sets <c>AppState.ActiveNarrationCode</c> so a subsequent language switch can restart
     /// narration in the new language (BUG-2 fix).
+    /// Uses audio queue if online and connected to prevent conflicts with other users.
     /// </summary>
     public async Task PlayPoiAsync(Poi poi, string? lang = null)
     {
@@ -92,7 +101,21 @@ public class PoiNarrationService
         }
 
         TrackNarrationInteraction(poi.Code, "audio_play_short");
-        await SpeakSafeAsync(poi.Code, text, language);
+
+        // Use queue if online and connected
+        if (_audioQueue.IsConnected)
+        {
+            Debug.WriteLine($"[AUDIO] Using queue mode for {poi.Code}");
+            _isQueueMode = true;
+            await _audioQueue.JoinPoiAsync(normalizedCode);
+            await _audioQueue.RequestAudioAsync(normalizedCode, language, "short");
+        }
+        else
+        {
+            Debug.WriteLine($"[AUDIO] Using direct mode (offline) for {poi.Code}");
+            _isQueueMode = false;
+            await SpeakSafeAsync(poi.Code, text, language);
+        }
     }
 
     /// <summary>
@@ -127,6 +150,7 @@ public class PoiNarrationService
     /// <summary>
     /// Plays the long narration (detailed) for <paramref name="poi"/>.
     /// Also tracks active POI for language-switch restart.
+    /// Uses audio queue if online and connected to prevent conflicts with other users.
     /// </summary>
     public async Task PlayPoiDetailedAsync(Poi poi, string? lang = null)
     {
@@ -150,18 +174,81 @@ public class PoiNarrationService
         }
 
         TrackNarrationInteraction(poi.Code, "audio_play_long");
-        await SpeakSafeAsync(poi.Code, text, language);
+
+        // Use queue if online and connected
+        if (_audioQueue.IsConnected)
+        {
+            Debug.WriteLine($"[AUDIO] Using queue mode for {poi.Code} (long)");
+            _isQueueMode = true;
+            await _audioQueue.JoinPoiAsync(normalizedCode);
+            await _audioQueue.RequestAudioAsync(normalizedCode, language, "long");
+        }
+        else
+        {
+            Debug.WriteLine($"[AUDIO] Using direct mode (offline) for {poi.Code} (long)");
+            _isQueueMode = false;
+            await SpeakSafeAsync(poi.Code, text, language);
+        }
     }
 
     /// <summary>
     /// Stops any in-flight audio and clears the active narration POI tracking,
     /// so a subsequent language switch does NOT auto-restart audio.
+    /// Also cancels queue entry if in queue mode.
     /// </summary>
     public void Stop()
     {
         _appState.ActiveNarrationCode = null;
         _audioService.StopAsync().GetAwaiter().GetResult();
+
+        // Cancel queue if in queue mode
+        if (_isQueueMode && _audioQueue.IsConnected && !string.IsNullOrEmpty(_appState.ActiveNarrationCode))
+        {
+            _audioQueue.CancelAudioAsync(_appState.ActiveNarrationCode).GetAwaiter().GetResult();
+        }
+
         Debug.WriteLine("[AUDIO] PoiNarrationService.Stop called — active narration tracking cleared");
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Audio Queue Event Handlers
+    // ─────────────────────────────────────────────────────────────────────────
+
+    private async void OnAudioStartRequested(object? sender, AudioStartEventArgs e)
+    {
+        Debug.WriteLine($"[AUDIO] Queue signaled start for {e.PoiCode}");
+
+        // Fetch POI and play audio
+        var normalizedCode = e.PoiCode.Trim().ToUpperInvariant();
+        var core = await ResolveCorePoi(normalizedCode);
+        if (core == null)
+        {
+            Debug.WriteLine($"[AUDIO] Cannot play - POI not found: {e.PoiCode}");
+            return;
+        }
+
+        var locResult = _locService.GetLocalizationResult(normalizedCode, e.Language);
+        var poi = PoiHydrationService.CreateHydratedPoi(core, locResult);
+
+        var text = e.NarrationLength == "long" ? SelectLongText(poi) : SelectShortText(poi);
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            Debug.WriteLine($"[AUDIO] No text for {e.PoiCode}");
+            await _audioQueue.CompleteAudioAsync(e.PoiCode);
+            return;
+        }
+
+        // Play audio
+        await SpeakSafeAsync(e.PoiCode, text, e.Language);
+
+        // Notify server that audio completed
+        await _audioQueue.CompleteAudioAsync(e.PoiCode);
+    }
+
+    private void OnQueueStatusUpdated(object? sender, AudioQueueStatusEventArgs e)
+    {
+        Debug.WriteLine($"[AUDIO] Queue status update: {e.Status.TotalInQueue} users at {e.Status.PoiCode}");
+        // UI can subscribe to this event to show queue position
     }
 
     // ─────────────────────────────────────────────────────────────────────────

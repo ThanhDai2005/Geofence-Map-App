@@ -69,6 +69,20 @@ public partial class App : Microsoft.Maui.Controls.Application
             catch { }
         });
 
+        // Initialize audio queue connection manager
+        _ = Task.Run(() =>
+        {
+            try
+            {
+                _ = services.GetRequiredService<MauiApp1.Infrastructure.AudioQueueConnectionManager>();
+                System.Diagnostics.Debug.WriteLine("[AUDIO-QUEUE] Connection manager initialized");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[AUDIO-QUEUE] Manager init failed: {ex.Message}");
+            }
+        });
+
         // Gửi heartbeat ngay khi app khởi động để hiện online nhanh
         _ = Task.Run(async () =>
         {

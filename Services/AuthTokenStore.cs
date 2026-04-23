@@ -20,4 +20,10 @@ public sealed class AuthTokenStore
         lock (_lock)
             _token = string.IsNullOrWhiteSpace(token) ? null : token;
     }
+
+    public Task<string?> GetTokenAsync()
+    {
+        lock (_lock)
+            return Task.FromResult(_token);
+    }
 }

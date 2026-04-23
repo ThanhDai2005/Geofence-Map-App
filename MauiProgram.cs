@@ -90,6 +90,9 @@ public static class MauiProgram
 
         builder.Services.AddSingleton<AudioService>();
         builder.Services.AddSingleton<IAudioPlayerService>(sp => sp.GetRequiredService<AudioService>());
+        builder.Services.AddSingleton<AudioQueueService>();
+        builder.Services.AddSingleton<IAudioQueueService>(sp => sp.GetRequiredService<AudioQueueService>());
+        builder.Services.AddSingleton<MauiApp1.Infrastructure.AudioQueueConnectionManager>();
 
         // ── ROEL 7.2.6: runtime observability + passive efficiency signals (decorators; kernels unchanged)
         builder.Services.AddSingleton<RuntimeTelemetryService>();
