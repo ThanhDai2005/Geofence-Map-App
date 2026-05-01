@@ -261,6 +261,7 @@ public static class MauiProgram
         builder.Services.AddTransient<ViewModels.QrScannerViewModel>();
         builder.Services.AddTransient<PoiDetailPage>();
         builder.Services.AddTransient<ViewModels.PoiDetailViewModel>();
+        builder.Services.AddTransient<ZonePoisPage>();
 
         builder.Services.AddTransient<ViewModels.LoginViewModel>();
         builder.Services.AddTransient<LoginPage>();

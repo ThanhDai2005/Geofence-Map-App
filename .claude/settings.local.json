@@ -14,7 +14,16 @@
       "Bash(curl -s http://localhost:4040/api/tunnels)",
       "Bash(node scripts/clean-pois.js)",
       "Bash(xargs grep *)",
-      "Bash(curl -X POST http://localhost:3000/api/v1/auth/login -H \"Content-Type: application/json\" -d \"{\\\\\"email\\\\\": \\\\\"owner@vngo.com\\\\\", \\\\\"password\\\\\": \\\\\"owner123\\\\\"}\")"
+      "Bash(curl -X POST http://localhost:3000/api/v1/auth/login -H \"Content-Type: application/json\" -d \"{\\\\\"email\\\\\": \\\\\"owner@vngo.com\\\\\", \\\\\"password\\\\\": \\\\\"owner123\\\\\"}\")",
+      "Bash(node -e \"console.log\\('Current time:', new Date\\(\\).toISOString\\(\\)\\); console.log\\('Token expiry from image: 2026-05-02T15:36:00'\\); const now = new Date\\(\\); const expiry = new Date\\('2026-05-02T15:36:00'\\); console.log\\('Hours until expiry:', \\(expiry - now\\) / 1000 / 60 / 60\\);\")",
+      "Bash(node -e \"const data = require\\('./vngo_travel.pois.json'\\); console.log\\('Total POIs:', data.length\\); console.log\\('Sample POI codes:', data.slice\\(0, 5\\).map\\(p => p.code\\).join\\(', '\\)\\); console.log\\('POI with zones:', data.filter\\(p => p.zone\\).length\\); console.log\\('APPROVED POIs:', data.filter\\(p => p.status === 'APPROVED'\\).length\\);\")",
+      "Bash(node -e \"const zones = require\\('./vngo_travel.zones.json'\\); console.log\\('Total Zones:', zones.length\\); zones.forEach\\(z => console.log\\('Zone:', z.code, '| POIs:', z.poiCodes.length, '| Price:', z.price\\)\\);\")",
+      "Bash(node -e \"const users = require\\('./vngo_travel.users.json'\\); console.log\\('Total Users:', users.length\\); users.forEach\\(u => console.log\\('User:', u.email, '| Role:', u.role, '| Premium:', u.isPremium\\)\\);\")",
+      "Bash(node -e \"const data = require\\('./vngo_travel.pois.json'\\); const poi = data[0]; console.log\\('POI Structure:'\\); console.log\\(JSON.stringify\\(poi, null, 2\\)\\);\")",
+      "Bash(node -e \"const data = require\\('./vngo_travel.pois.json'\\); console.log\\('POI Codes in DB:'\\); data.slice\\(0, 10\\).forEach\\(p => console.log\\('-', p.code, '| Status:', p.status\\)\\);\")",
+      "Bash(awk '{print $9, $5}')",
+      "Bash(node -e ' *)",
+      "Bash(node -e \"const pois = require\\('./vngo_travel.pois.json'\\); console.log\\('Available POI Codes:'\\); pois.filter\\(p => p.status === 'APPROVED'\\).forEach\\(p => console.log\\(p.code, '|', p.name, '| Lat:', p.location.coordinates[1], 'Lng:', p.location.coordinates[0]\\)\\);\")"
     ]
   }
 }

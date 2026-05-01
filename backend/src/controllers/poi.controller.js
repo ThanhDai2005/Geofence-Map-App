@@ -1,11 +1,67 @@
 const poiService = require('../services/poi.service');
+const zoneService = require('../services/zone.service');
 
 /**
  * POI Controller
  *
- * NOTE: scan() method REMOVED - POI QR system deprecated.
- * Use Zone QR system instead: POST /api/v1/zones/scan
+ * NOTE: scan() method uses Zone QR system for backward compatibility
  */
+
+/**
+ * Legacy POI scan endpoint - converts zone scan to POI format
+ * POST /api/v1/pois/scan
+ */
+exports.scanLegacy = async (req, res, next) => {
+    try {
+        const { token } = req.body;
+
+        if (!token || typeof token !== 'string') {
+            return res.status(400).json({
+                success: false,
+                error: 'token is required'
+            });
+        }
+
+        const userId = req.user ? req.user._id : null;
+
+        // Use zone service to resolve token
+        const zoneResult = await zoneService.resolveZoneScanToken(token, userId);
+
+        // Convert zone result to legacy POI format
+        // Take the first POI from the zone
+        if (!zoneResult.pois || zoneResult.pois.length === 0) {
+            return res.status(404).json({
+                success: false,
+                error: 'No POIs found in this zone'
+            });
+        }
+
+        const firstPoi = zoneResult.pois[0];
+
+        // Map to legacy PoiScanData format
+        const legacyData = {
+            id: firstPoi._id || firstPoi.id,
+            code: firstPoi.code,
+            location: firstPoi.location,
+            radius: firstPoi.radius || 50,
+            priority: firstPoi.priority || 0,
+            name: firstPoi.name,
+            summary: firstPoi.summary,
+            narrationShort: firstPoi.narrationShort,
+            narrationLong: firstPoi.narrationLong,
+            content: firstPoi.content,
+            isPremiumOnly: firstPoi.isPremiumOnly || false,
+            status: firstPoi.status
+        };
+
+        res.status(200).json({
+            success: true,
+            data: legacyData
+        });
+    } catch (error) {
+        next(error);
+    }
+};
 
 exports.getNearby = async (req, res, next) => {
     try {

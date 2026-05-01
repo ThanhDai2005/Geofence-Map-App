@@ -114,7 +114,7 @@ public class PoiEntryCoordinator : IPoiEntryCoordinator
 
     private async Task<PoiEntryResult> HandleSecureScanAsync(PoiEntryRequest request, string token, CancellationToken cancellationToken)
     {
-        using var resp = await _api.PostAsJsonAsync("pois/scan", new { token }, cancellationToken).ConfigureAwait(false);
+        using var resp = await _api.PostAsJsonAsync("zones/scan", new { token }, cancellationToken).ConfigureAwait(false);
         var bodyText = await resp.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
         if (!resp.IsSuccessStatusCode)
         {
@@ -122,10 +122,10 @@ public class PoiEntryCoordinator : IPoiEntryCoordinator
             return new PoiEntryResult { Success = false, Error = msg };
         }
 
-        PoiScanApiResponse? envelope;
+        ZoneScanApiResponse? envelope;
         try
         {
-            envelope = JsonSerializer.Deserialize<PoiScanApiResponse>(bodyText, JsonOpts);
+            envelope = JsonSerializer.Deserialize<ZoneScanApiResponse>(bodyText, JsonOpts);
         }
         catch (Exception ex)
         {
@@ -133,25 +133,18 @@ public class PoiEntryCoordinator : IPoiEntryCoordinator
         }
 
         var data = envelope?.Data;
-        if (data == null || string.IsNullOrWhiteSpace(data.Code))
-            return new PoiEntryResult { Success = false, Error = "Invalid POI payload from server" };
+        if (data?.Zone == null || string.IsNullOrWhiteSpace(data.Zone.Code))
+            return new PoiEntryResult { Success = false, Error = "Invalid zone payload from server" };
 
-        var code = data.Code.Trim().ToUpperInvariant();
+        var zoneCode = data.Zone.Code.Trim().ToUpperInvariant();
 
-        if (ShouldSuppressDuplicateNavigation(code))
+        if (ShouldSuppressDuplicateNavigation(zoneCode))
         {
-            Debug.WriteLine($"[QR-NAV] Duplicate secure scan suppressed code='{code}' (pre-mutation)");
+            Debug.WriteLine($"[QR-NAV] Duplicate zone scan suppressed code='{zoneCode}' (pre-mutation)");
             return new PoiEntryResult { Success = true, Navigated = false };
         }
 
-        await MergeScanResultIntoLocalAsync(data, cancellationToken).ConfigureAwait(false);
-
-        try
-        {
-            await _mapUi.ApplySelectedPoiByCodeAsync(MapUiSelectionSource.CoordinatorQrOrDeepLink, code, cancellationToken).ConfigureAwait(false);
-            Debug.WriteLine($"[QR-NAV] secure scan set current POI code={code}");
-        }
-        catch { }
+        await MergeZoneScanResultIntoLocalAsync(data, cancellationToken).ConfigureAwait(false);
 
         await _poiQuery.InitAsync(cancellationToken).ConfigureAwait(false);
 
@@ -159,20 +152,20 @@ public class PoiEntryCoordinator : IPoiEntryCoordinator
             ? request.PreferredLanguage
             : _appState.CurrentLanguage;
 
-        var route = BuildRoute(request, code, preferred);
-        Debug.WriteLine($"[QR-NAV] secure scan navigating mode={request.NavigationMode} route={route}");
+        var route = $"/zonepois?zoneCode={Uri.EscapeDataString(zoneCode)}&zoneName={Uri.EscapeDataString(data.Zone.Name ?? "")}&lang={Uri.EscapeDataString(preferred)}";
+        Debug.WriteLine($"[QR-NAV] zone scan navigating to zone POI list route={route}");
         await _navService.NavigateToAsync(route);
 
-        MarkHandled(code);
+        MarkHandled(zoneCode);
 
         await TrackQrScanAnalyticsAsync(
-                code,
+                zoneCode,
                 preferred,
                 fetchTriggered: true,
                 cancellationToken,
-                data.Location?.Lat,
-                data.Location?.Lng,
-                50,
+                null,
+                null,
+                null,
                 EventGeoSource.Qr)
             .ConfigureAwait(false);
 
@@ -224,6 +217,61 @@ public class PoiEntryCoordinator : IPoiEntryCoordinator
         Reg("en", data.Content?.En);
         if (string.IsNullOrWhiteSpace(data.Name))
             Reg("vi", data.Content?.Vi);
+    }
+
+    private async Task MergeZoneScanResultIntoLocalAsync(ZoneScanData data, CancellationToken cancellationToken)
+    {
+        if (data?.Pois == null || data.Pois.Count == 0) return;
+
+        await _poiQuery.InitAsync(cancellationToken).ConfigureAwait(false);
+
+        foreach (var poiData in data.Pois)
+        {
+            if (poiData.Location == null || string.IsNullOrWhiteSpace(poiData.Code)) continue;
+
+            var code = poiData.Code.Trim().ToUpperInvariant();
+
+            var poi = new Poi
+            {
+                Id = code,
+                Code = code,
+                Latitude = poiData.Location.Lat,
+                Longitude = poiData.Location.Lng,
+                Radius = poiData.Radius > 0 ? poiData.Radius : 50,
+                Priority = poiData.Priority != 0 ? poiData.Priority : 1
+            };
+            await _poiCommand.UpsertAsync(poi, cancellationToken).ConfigureAwait(false);
+
+            if (!string.IsNullOrWhiteSpace(poiData.Name))
+            {
+                var vi = new PoiLocalization
+                {
+                    Code = code,
+                    LanguageCode = "vi",
+                    Name = poiData.Name?.Trim() ?? "",
+                    Summary = poiData.Summary?.Trim() ?? "",
+                    NarrationShort = string.IsNullOrWhiteSpace(poiData.NarrationShort)
+                        ? (poiData.Summary?.Trim() ?? poiData.Name?.Trim() ?? "")
+                        : poiData.NarrationShort!.Trim(),
+                    NarrationLong = string.IsNullOrWhiteSpace(poiData.NarrationLong)
+                        ? (poiData.NarrationShort?.Trim() ?? poiData.Summary?.Trim() ?? poiData.Name?.Trim() ?? "")
+                        : poiData.NarrationLong!.Trim()
+                };
+                _localization.RegisterDynamicTranslation(code, "vi", vi);
+            }
+
+            void Reg(string lang, string? text)
+            {
+                if (string.IsNullOrWhiteSpace(text)) return;
+                _localization.RegisterDynamicTranslation(code, lang, PoiServerContentParser.BuildLocalization(code, lang, text));
+            }
+
+            Reg("en", poiData.Content?.En);
+            if (string.IsNullOrWhiteSpace(poiData.Name))
+                Reg("vi", poiData.Content?.Vi);
+        }
+
+        Debug.WriteLine($"[QR-NAV] Merged {data.Pois.Count} POIs from zone scan into local database");
     }
 
     private async Task<PoiEntryResult> NavigateByCodeAsync(PoiEntryRequest request, string code, CancellationToken cancellationToken)

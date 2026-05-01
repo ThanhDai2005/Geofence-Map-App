@@ -14,7 +14,6 @@ import DashboardLayout from './components/DashboardLayout.jsx';
 import AdminChangeRequestsPage from './pages/AdminChangeRequestsPage.jsx';
 import ZonesManagementPage from './pages/ZonesManagementPage.jsx';
 import AudioAnalyticsPage from './pages/AudioAnalyticsPage.jsx';
-import ZonesManagementPage from './pages/ZonesManagementPage.jsx';
 
 function Protected({ children }) {
   const { isAuthenticated } = useAuth();

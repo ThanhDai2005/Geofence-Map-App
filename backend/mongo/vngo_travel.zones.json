@@ -1,0 +1,81 @@
+[{
+  "_id": {
+    "$oid": "69f08b901a0abd3ddaf26df7"
+  },
+  "code": "HO_CHI_MINH_CITY_DISTRICT_1",
+  "name": "Ho Chi Minh City District 1",
+  "description": "Central district of Ho Chi Minh City with famous landmarks",
+  "price": 100,
+  "isActive": true,
+  "poiCodes": [
+    "CHO_BEN_THANH",
+    "NHA_THO_DUC_BA",
+    "BUU_DIEN_TRUNG_TAM",
+    "DINH_DOC_LAP",
+    "BAO_TANG_CHUNG_TICH_CHIEN_TRANH"
+  ],
+  "imageUrl": null,
+  "displayOrder": 0,
+  "tags": ["saigon", "district1", "landmarks"],
+  "createdAt": {
+    "$date": "2026-04-28T10:27:28.650Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-01T09:10:00.000Z"
+  },
+  "__v": 5
+},
+{
+  "_id": {
+    "$oid": "69f32cd81c88c419a223a48b"
+  },
+  "code": "HANOI_OLD_QUARTER",
+  "name": "Hanoi Old Quarter & Hoan Kiem Lake",
+  "description": "Historic center of Hanoi with Hoan Kiem Lake and surrounding attractions",
+  "price": 100,
+  "isActive": true,
+  "poiCodes": [
+    "HO_GUOM",
+    "LANG_BAC",
+    "VAN_MIEU",
+    "CHUA_MOT_COT",
+    "PHO_CO_HN",
+    "NHA_THO_LON_HN"
+  ],
+  "imageUrl": null,
+  "displayOrder": 1,
+  "tags": ["hanoi", "oldquarter", "history"],
+  "createdAt": {
+    "$date": "2026-04-30T10:20:08.841Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-01T09:10:00.000Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69f32cd81c88c419a223a48c"
+  },
+  "code": "SAPA_MOUNTAIN_TOWN",
+  "name": "Sapa Mountain Town",
+  "description": "Beautiful mountain town with Fansipan peak and ethnic villages",
+  "price": 150,
+  "isActive": true,
+  "poiCodes": [
+    "SAPA",
+    "FANSIPAN",
+    "CAT_CAT",
+    "THAC_BAC"
+  ],
+  "imageUrl": null,
+  "displayOrder": 2,
+  "tags": ["sapa", "mountain", "trekking"],
+  "createdAt": {
+    "$date": "2026-05-01T09:10:00.000Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-01T09:10:00.000Z"
+  },
+  "__v": 0
+}]

@@ -1,0 +1,307 @@
+[{
+  "_id": {
+    "$oid": "69ea25d41abb30e7f3ae6bfb"
+  },
+  "userId": {
+    "$oid": "69ea25d21abb30e7f3ae6bf1"
+  },
+  "balance": 5000,
+  "currency": "credits",
+  "lastTransaction": null,
+  "version": 0,
+  "createdAt": {
+    "$date": "2026-04-23T13:59:48.279Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-23T13:59:48.279Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69ea267ebac214d2fe3a18a6"
+  },
+  "userId": {
+    "$oid": "69ea267dbac214d2fe3a189c"
+  },
+  "balance": 5000,
+  "currency": "credits",
+  "lastTransaction": null,
+  "version": 0,
+  "createdAt": {
+    "$date": "2026-04-23T14:02:38.541Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-23T14:02:38.541Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69ea26a14e1b28a1e33eca03"
+  },
+  "userId": {
+    "$oid": "69ea269f4e1b28a1e33ec9f9"
+  },
+  "balance": 5000,
+  "currency": "credits",
+  "lastTransaction": null,
+  "version": 0,
+  "createdAt": {
+    "$date": "2026-04-23T14:03:13.138Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-23T14:03:13.138Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69ea30ad0949b3f9678cc22a"
+  },
+  "userId": {
+    "$oid": "69ea30ab0949b3f9678cc220"
+  },
+  "balance": 4500,
+  "currency": "credits",
+  "lastTransaction": {
+    "$date": "2026-04-25T11:26:07.513Z"
+  },
+  "version": 1,
+  "createdAt": {
+    "$date": "2026-04-23T14:46:05.354Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-25T11:26:07.514Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69eadbd0f212067c60c95d36"
+  },
+  "userId": {
+    "$oid": "69ead834719b951300d9cad1"
+  },
+  "balance": 500,
+  "currency": "credits",
+  "lastTransaction": {
+    "$date": "2026-04-24T03:09:04.498Z"
+  },
+  "version": 2,
+  "createdAt": {
+    "$date": "2026-04-24T02:56:16.348Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-24T03:09:04.502Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69ecbf1bad4c68cece49eace"
+  },
+  "userId": {
+    "$oid": "69ecbf19ad4c68cece49eac4"
+  },
+  "balance": 4500,
+  "currency": "credits",
+  "lastTransaction": {
+    "$date": "2026-04-26T11:42:57.993Z"
+  },
+  "version": 1,
+  "createdAt": {
+    "$date": "2026-04-25T13:18:19.111Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-26T11:42:57.995Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69edfe63545b759994a4e15d"
+  },
+  "userId": {
+    "$oid": "69edfe62545b759994a4e153"
+  },
+  "balance": 4500,
+  "currency": "credits",
+  "lastTransaction": {
+    "$date": "2026-04-26T12:02:10.271Z"
+  },
+  "version": 1,
+  "createdAt": {
+    "$date": "2026-04-26T12:00:35.756Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-26T12:02:10.272Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69edff294af0f1f7545229e5"
+  },
+  "userId": {
+    "$oid": "69edff284af0f1f7545229db"
+  },
+  "balance": 4500,
+  "currency": "credits",
+  "lastTransaction": {
+    "$date": "2026-04-26T12:05:24.397Z"
+  },
+  "version": 1,
+  "createdAt": {
+    "$date": "2026-04-26T12:03:53.999Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-26T12:05:24.397Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69ee0fe86bcab68bf38afd12"
+  },
+  "userId": {
+    "$oid": "69edfc719e1c528b098da9ff"
+  },
+  "balance": 505,
+  "currency": "credits",
+  "lastTransaction": {
+    "$date": "2026-04-26T13:31:48.185Z"
+  },
+  "version": 1,
+  "createdAt": {
+    "$date": "2026-04-26T13:15:20.399Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-26T13:31:48.186Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69ee14c530a8ea4c9e1258c4"
+  },
+  "userId": {
+    "$oid": "69ee14c430a8ea4c9e1258ba"
+  },
+  "balance": 5000,
+  "currency": "credits",
+  "lastTransaction": null,
+  "version": 0,
+  "createdAt": {
+    "$date": "2026-04-26T13:36:05.518Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-26T13:36:05.518Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69ee14e2c7f5f75c8642497d"
+  },
+  "userId": {
+    "$oid": "69ee14e1c7f5f75c8642497c"
+  },
+  "balance": 1500,
+  "currency": "credits",
+  "lastTransaction": {
+    "$date": "2026-04-26T13:36:49.020Z"
+  },
+  "version": 1,
+  "createdAt": {
+    "$date": "2026-04-26T13:36:34.240Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-26T13:36:49.021Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69ee15a034f11f8f781244c3"
+  },
+  "userId": {
+    "$oid": "69ee159f34f11f8f781244c2"
+  },
+  "balance": 1500,
+  "currency": "credits",
+  "lastTransaction": {
+    "$date": "2026-04-26T13:39:47.733Z"
+  },
+  "version": 1,
+  "createdAt": {
+    "$date": "2026-04-26T13:39:44.170Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-26T13:39:47.734Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69ee1a8c7994c034be85c75b"
+  },
+  "userId": {
+    "$oid": "69ee1a8c7994c034be85c75a"
+  },
+  "balance": 1500,
+  "currency": "credits",
+  "lastTransaction": {
+    "$date": "2026-04-26T14:00:48.712Z"
+  },
+  "version": 1,
+  "createdAt": {
+    "$date": "2026-04-26T14:00:44.914Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-26T14:00:48.712Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69ee1da1ad2fae235c3e7ab7"
+  },
+  "userId": {
+    "$oid": "69ee1da0ad2fae235c3e7ab6"
+  },
+  "balance": 4000,
+  "currency": "credits",
+  "lastTransaction": {
+    "$date": "2026-04-26T14:14:16.304Z"
+  },
+  "version": 2,
+  "createdAt": {
+    "$date": "2026-04-26T14:13:53.486Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-26T14:14:16.304Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69f090da1a0abd3ddaf26e06"
+  },
+  "userId": {
+    "$oid": "69f087dd98444528eb49d0bd"
+  },
+  "balance": 900,
+  "currency": "credits",
+  "lastTransaction": {
+    "$date": "2026-04-28T10:54:55.943Z"
+  },
+  "version": 1,
+  "createdAt": {
+    "$date": "2026-04-28T10:50:02.035Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-28T10:54:55.944Z"
+  },
+  "__v": 0
+}]

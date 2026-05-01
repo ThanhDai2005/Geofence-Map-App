@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="MauiApp1.Views.ZonePoisPage"
+             Title="Zone POIs">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Zone Header -->
+        <Frame Grid.Row="0"
+               BackgroundColor="#2196F3"
+               Padding="20"
+               Margin="0"
+               CornerRadius="0">
+            <StackLayout>
+                <Label x:Name="ZoneNameLabel"
+                       Text="Zone Name"
+                       FontSize="24"
+                       FontAttributes="Bold"
+                       TextColor="White"
+                       HorizontalOptions="Center"/>
+                <Label x:Name="ZoneDescriptionLabel"
+                       Text="Zone Description"
+                       FontSize="14"
+                       TextColor="White"
+                       HorizontalOptions="Center"
+                       Margin="0,5,0,0"/>
+                <Label x:Name="PoiCountLabel"
+                       Text="0 locations"
+                       FontSize="12"
+                       TextColor="White"
+                       HorizontalOptions="Center"
+                       Margin="0,5,0,0"/>
+            </StackLayout>
+        </Frame>
+
+        <!-- POI List -->
+        <CollectionView x:Name="PoisCollectionView"
+                        Grid.Row="1"
+                        SelectionMode="Single"
+                        SelectionChanged="OnPoiSelected">
+            <CollectionView.ItemTemplate>
+                <DataTemplate>
+                    <Frame Padding="15"
+                           Margin="10,5"
+                           BackgroundColor="White"
+                           CornerRadius="8"
+                           HasShadow="True">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+
+                            <StackLayout Grid.Column="0">
+                                <Label Text="{Binding Name}"
+                                       FontSize="18"
+                                       FontAttributes="Bold"
+                                       TextColor="#333333"/>
+                                <Label Text="{Binding Summary}"
+                                       FontSize="14"
+                                       TextColor="#666666"
+                                       Margin="0,5,0,0"
+                                       LineBreakMode="TailTruncation"
+                                       MaxLines="2"/>
+                                <Label Text="{Binding Code}"
+                                       FontSize="12"
+                                       TextColor="#999999"
+                                       Margin="0,5,0,0"/>
+                            </StackLayout>
+
+                            <Image Grid.Column="1"
+                                   Source="arrow_right.png"
+                                   WidthRequest="24"
+                                   HeightRequest="24"
+                                   VerticalOptions="Center"/>
+                        </Grid>
+                    </Frame>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+        </CollectionView>
+
+        <!-- Access Status / Purchase Button -->
+        <Frame x:Name="AccessFrame"
+               Grid.Row="2"
+               BackgroundColor="#FFF3E0"
+               Padding="20"
+               Margin="0"
+               CornerRadius="0"
+               IsVisible="False">
+            <StackLayout>
+                <Label x:Name="AccessMessageLabel"
+                       Text="Purchase this zone to unlock all locations"
+                       FontSize="14"
+                       TextColor="#E65100"
+                       HorizontalOptions="Center"/>
+                <Button x:Name="PurchaseButton"
+                        Text="Purchase Zone"
+                        BackgroundColor="#FF9800"
+                        TextColor="White"
+                        CornerRadius="8"
+                        Margin="0,10,0,0"
+                        Clicked="OnPurchaseClicked"/>
+            </StackLayout>
+        </Frame>
+
+        <!-- Loading Indicator -->
+        <ActivityIndicator x:Name="LoadingIndicator"
+                          Grid.Row="1"
+                          IsRunning="False"
+                          IsVisible="False"
+                          Color="#2196F3"
+                          VerticalOptions="Center"
+                          HorizontalOptions="Center"/>
+    </Grid>
+</ContentPage>

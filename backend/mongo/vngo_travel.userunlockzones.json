@@ -1,0 +1,300 @@
+[{
+  "_id": {
+    "$oid": "69eca4cf323283d03c1d1c37"
+  },
+  "userId": {
+    "$oid": "69ea30ab0949b3f9678cc220"
+  },
+  "zoneCode": "DEMO_HCMC_DISTRICT1",
+  "purchasePrice": 500,
+  "purchasedAt": {
+    "$date": "2026-04-25T11:26:07.570Z"
+  },
+  "createdAt": {
+    "$date": "2026-04-25T11:26:07.580Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-25T11:26:07.580Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69ecbf1bad4c68cece49ead0"
+  },
+  "userId": {
+    "$oid": "69ecbf19ad4c68cece49eac4"
+  },
+  "zoneCode": "DEMO_HANOI_OLD_QUARTER",
+  "purchasePrice": 0,
+  "purchasedAt": {
+    "$date": "2026-04-25T13:18:19.233Z"
+  },
+  "createdAt": {
+    "$date": "2026-04-25T13:18:19.234Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-25T13:18:19.234Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69edfa421a29aad5016372f6"
+  },
+  "userId": {
+    "$oid": "69ecbf19ad4c68cece49eac4"
+  },
+  "zoneCode": "DEMO_HCMC_DISTRICT1",
+  "purchasePrice": 500,
+  "purchasedAt": {
+    "$date": "2026-04-26T11:42:58.053Z"
+  },
+  "createdAt": {
+    "$date": "2026-04-26T11:42:58.056Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-26T11:42:58.056Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69edfe63545b759994a4e15f"
+  },
+  "userId": {
+    "$oid": "69edfe62545b759994a4e153"
+  },
+  "zoneCode": "DEMO_HANOI_OLD_QUARTER",
+  "purchasePrice": 0,
+  "purchasedAt": {
+    "$date": "2026-04-26T12:00:35.853Z"
+  },
+  "createdAt": {
+    "$date": "2026-04-26T12:00:35.854Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-26T12:00:35.854Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69edfec21a29aad5016372fd"
+  },
+  "userId": {
+    "$oid": "69edfe62545b759994a4e153"
+  },
+  "zoneCode": "DEMO_HCMC_DISTRICT1",
+  "purchasePrice": 500,
+  "purchasedAt": {
+    "$date": "2026-04-26T12:02:10.318Z"
+  },
+  "createdAt": {
+    "$date": "2026-04-26T12:02:10.318Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-26T12:02:10.318Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69edff2a4af0f1f7545229e7"
+  },
+  "userId": {
+    "$oid": "69edff284af0f1f7545229db"
+  },
+  "zoneCode": "DEMO_HANOI_OLD_QUARTER",
+  "purchasePrice": 0,
+  "purchasedAt": {
+    "$date": "2026-04-26T12:03:54.099Z"
+  },
+  "createdAt": {
+    "$date": "2026-04-26T12:03:54.100Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-26T12:03:54.100Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69edff841a29aad501637301"
+  },
+  "userId": {
+    "$oid": "69edff284af0f1f7545229db"
+  },
+  "zoneCode": "DEMO_HCMC_DISTRICT1",
+  "purchasePrice": 500,
+  "purchasedAt": {
+    "$date": "2026-04-26T12:05:24.442Z"
+  },
+  "createdAt": {
+    "$date": "2026-04-26T12:05:24.443Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-26T12:05:24.443Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69ee13c46bcab68bf38afd18"
+  },
+  "userId": {
+    "$oid": "69edfc719e1c528b098da9ff"
+  },
+  "zoneCode": "DEMO_HANOI_OLD_QUARTER",
+  "purchasePrice": 500,
+  "purchasedAt": {
+    "$date": "2026-04-26T13:31:48.247Z"
+  },
+  "createdAt": {
+    "$date": "2026-04-26T13:31:48.248Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-26T13:31:48.248Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69ee14c530a8ea4c9e1258c6"
+  },
+  "userId": {
+    "$oid": "69ee14c430a8ea4c9e1258ba"
+  },
+  "zoneCode": "DEMO_HANOI_OLD_QUARTER",
+  "purchasePrice": 0,
+  "purchasedAt": {
+    "$date": "2026-04-26T13:36:05.623Z"
+  },
+  "createdAt": {
+    "$date": "2026-04-26T13:36:05.623Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-26T13:36:05.623Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69ee14f16bcab68bf38afd21"
+  },
+  "userId": {
+    "$oid": "69ee14e1c7f5f75c8642497c"
+  },
+  "zoneCode": "DEMO_HANOI_OLD_QUARTER",
+  "purchasePrice": 500,
+  "purchasedAt": {
+    "$date": "2026-04-26T13:36:49.069Z"
+  },
+  "createdAt": {
+    "$date": "2026-04-26T13:36:49.069Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-26T13:36:49.069Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69ee15a36bcab68bf38afd2a"
+  },
+  "userId": {
+    "$oid": "69ee159f34f11f8f781244c2"
+  },
+  "zoneCode": "DEMO_HANOI_OLD_QUARTER",
+  "purchasePrice": 500,
+  "purchasedAt": {
+    "$date": "2026-04-26T13:39:47.782Z"
+  },
+  "createdAt": {
+    "$date": "2026-04-26T13:39:47.783Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-26T13:39:47.783Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69ee1a906bcab68bf38afd72"
+  },
+  "userId": {
+    "$oid": "69ee1a8c7994c034be85c75a"
+  },
+  "zoneCode": "DEMO_HANOI_OLD_QUARTER",
+  "purchasePrice": 500,
+  "purchasedAt": {
+    "$date": "2026-04-26T14:00:48.760Z"
+  },
+  "createdAt": {
+    "$date": "2026-04-26T14:00:48.761Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-26T14:00:48.761Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69ee1da26bcab68bf38afd80"
+  },
+  "userId": {
+    "$oid": "69ee1da0ad2fae235c3e7ab6"
+  },
+  "zoneCode": "DEMO_HANOI_OLD_QUARTER",
+  "purchasePrice": 500,
+  "purchasedAt": {
+    "$date": "2026-04-26T14:13:54.485Z"
+  },
+  "createdAt": {
+    "$date": "2026-04-26T14:13:54.486Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-26T14:13:54.486Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69ee1db86bcab68bf38afd86"
+  },
+  "userId": {
+    "$oid": "69ee1da0ad2fae235c3e7ab6"
+  },
+  "zoneCode": "DEMO_HCMC_DISTRICT1",
+  "purchasePrice": 500,
+  "purchasedAt": {
+    "$date": "2026-04-26T14:14:16.350Z"
+  },
+  "createdAt": {
+    "$date": "2026-04-26T14:14:16.351Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-26T14:14:16.351Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69f091ff510107e578242b7a"
+  },
+  "userId": {
+    "$oid": "69f087dd98444528eb49d0bd"
+  },
+  "zoneCode": "HO_CHI_MINH_CITY_DISTRICT_1",
+  "purchasePrice": 100,
+  "purchasedAt": {
+    "$date": "2026-04-28T10:54:55.995Z"
+  },
+  "createdAt": {
+    "$date": "2026-04-28T10:54:55.996Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-28T10:54:55.996Z"
+  },
+  "__v": 0
+}]

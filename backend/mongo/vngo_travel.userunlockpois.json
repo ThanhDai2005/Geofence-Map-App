@@ -1,0 +1,400 @@
+[{
+  "_id": {
+    "$oid": "69ee14f16bcab68bf38afd22"
+  },
+  "userId": {
+    "$oid": "69ee14e1c7f5f75c8642497c"
+  },
+  "poiCode": "DEMO_HOAN_KIEM_LAKE",
+  "purchasePrice": 0,
+  "purchasedAt": {
+    "$date": "2026-04-26T13:36:49.134Z"
+  },
+  "createdAt": {
+    "$date": "2026-04-26T13:36:49.136Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-26T13:36:49.136Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69ee14f16bcab68bf38afd23"
+  },
+  "userId": {
+    "$oid": "69ee14e1c7f5f75c8642497c"
+  },
+  "poiCode": "DEMO_NGOC_SON_TEMPLE",
+  "purchasePrice": 0,
+  "purchasedAt": {
+    "$date": "2026-04-26T13:36:49.203Z"
+  },
+  "createdAt": {
+    "$date": "2026-04-26T13:36:49.203Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-26T13:36:49.203Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69ee14f16bcab68bf38afd24"
+  },
+  "userId": {
+    "$oid": "69ee14e1c7f5f75c8642497c"
+  },
+  "poiCode": "DEMO_DONG_XUAN_MARKET",
+  "purchasePrice": 0,
+  "purchasedAt": {
+    "$date": "2026-04-26T13:36:49.254Z"
+  },
+  "createdAt": {
+    "$date": "2026-04-26T13:36:49.254Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-26T13:36:49.254Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69ee15a36bcab68bf38afd2b"
+  },
+  "userId": {
+    "$oid": "69ee159f34f11f8f781244c2"
+  },
+  "poiCode": "DEMO_HOAN_KIEM_LAKE",
+  "purchasePrice": 0,
+  "purchasedAt": {
+    "$date": "2026-04-26T13:39:47.831Z"
+  },
+  "createdAt": {
+    "$date": "2026-04-26T13:39:47.831Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-26T13:39:47.831Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69ee15a36bcab68bf38afd2c"
+  },
+  "userId": {
+    "$oid": "69ee159f34f11f8f781244c2"
+  },
+  "poiCode": "DEMO_NGOC_SON_TEMPLE",
+  "purchasePrice": 0,
+  "purchasedAt": {
+    "$date": "2026-04-26T13:39:47.878Z"
+  },
+  "createdAt": {
+    "$date": "2026-04-26T13:39:47.879Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-26T13:39:47.879Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69ee15a36bcab68bf38afd2d"
+  },
+  "userId": {
+    "$oid": "69ee159f34f11f8f781244c2"
+  },
+  "poiCode": "DEMO_DONG_XUAN_MARKET",
+  "purchasePrice": 0,
+  "purchasedAt": {
+    "$date": "2026-04-26T13:39:47.926Z"
+  },
+  "createdAt": {
+    "$date": "2026-04-26T13:39:47.927Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-26T13:39:47.927Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69ee1a906bcab68bf38afd73"
+  },
+  "userId": {
+    "$oid": "69ee1a8c7994c034be85c75a"
+  },
+  "poiCode": "DEMO_HOAN_KIEM_LAKE",
+  "purchasePrice": 0,
+  "purchasedAt": {
+    "$date": "2026-04-26T14:00:48.808Z"
+  },
+  "createdAt": {
+    "$date": "2026-04-26T14:00:48.809Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-26T14:00:48.809Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69ee1a906bcab68bf38afd74"
+  },
+  "userId": {
+    "$oid": "69ee1a8c7994c034be85c75a"
+  },
+  "poiCode": "DEMO_NGOC_SON_TEMPLE",
+  "purchasePrice": 0,
+  "purchasedAt": {
+    "$date": "2026-04-26T14:00:48.856Z"
+  },
+  "createdAt": {
+    "$date": "2026-04-26T14:00:48.857Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-26T14:00:48.857Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69ee1a906bcab68bf38afd75"
+  },
+  "userId": {
+    "$oid": "69ee1a8c7994c034be85c75a"
+  },
+  "poiCode": "DEMO_DONG_XUAN_MARKET",
+  "purchasePrice": 0,
+  "purchasedAt": {
+    "$date": "2026-04-26T14:00:48.904Z"
+  },
+  "createdAt": {
+    "$date": "2026-04-26T14:00:48.904Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-26T14:00:48.904Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69ee1da26bcab68bf38afd81"
+  },
+  "userId": {
+    "$oid": "69ee1da0ad2fae235c3e7ab6"
+  },
+  "poiCode": "DEMO_HOAN_KIEM_LAKE",
+  "purchasePrice": 0,
+  "purchasedAt": {
+    "$date": "2026-04-26T14:13:54.532Z"
+  },
+  "createdAt": {
+    "$date": "2026-04-26T14:13:54.533Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-26T14:13:54.533Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69ee1da26bcab68bf38afd82"
+  },
+  "userId": {
+    "$oid": "69ee1da0ad2fae235c3e7ab6"
+  },
+  "poiCode": "DEMO_NGOC_SON_TEMPLE",
+  "purchasePrice": 0,
+  "purchasedAt": {
+    "$date": "2026-04-26T14:13:54.578Z"
+  },
+  "createdAt": {
+    "$date": "2026-04-26T14:13:54.578Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-26T14:13:54.578Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69ee1da26bcab68bf38afd83"
+  },
+  "userId": {
+    "$oid": "69ee1da0ad2fae235c3e7ab6"
+  },
+  "poiCode": "DEMO_DONG_XUAN_MARKET",
+  "purchasePrice": 0,
+  "purchasedAt": {
+    "$date": "2026-04-26T14:13:54.624Z"
+  },
+  "createdAt": {
+    "$date": "2026-04-26T14:13:54.624Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-26T14:13:54.624Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69ee1db86bcab68bf38afd87"
+  },
+  "userId": {
+    "$oid": "69ee1da0ad2fae235c3e7ab6"
+  },
+  "poiCode": "DEMO_BEN_THANH_MARKET",
+  "purchasePrice": 0,
+  "purchasedAt": {
+    "$date": "2026-04-26T14:14:16.397Z"
+  },
+  "createdAt": {
+    "$date": "2026-04-26T14:14:16.397Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-26T14:14:16.397Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69ee1db86bcab68bf38afd88"
+  },
+  "userId": {
+    "$oid": "69ee1da0ad2fae235c3e7ab6"
+  },
+  "poiCode": "DEMO_NOTRE_DAME_CATHEDRAL",
+  "purchasePrice": 0,
+  "purchasedAt": {
+    "$date": "2026-04-26T14:14:16.444Z"
+  },
+  "createdAt": {
+    "$date": "2026-04-26T14:14:16.445Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-26T14:14:16.445Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69f09200510107e578242b7b"
+  },
+  "userId": {
+    "$oid": "69f087dd98444528eb49d0bd"
+  },
+  "poiCode": "VNM-DNG-001",
+  "purchasePrice": 0,
+  "purchasedAt": {
+    "$date": "2026-04-28T10:54:56.050Z"
+  },
+  "createdAt": {
+    "$date": "2026-04-28T10:54:56.051Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-28T10:54:56.051Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69f09200510107e578242b7c"
+  },
+  "userId": {
+    "$oid": "69f087dd98444528eb49d0bd"
+  },
+  "poiCode": "VNM-HAN-001",
+  "purchasePrice": 0,
+  "purchasedAt": {
+    "$date": "2026-04-28T10:54:56.104Z"
+  },
+  "createdAt": {
+    "$date": "2026-04-28T10:54:56.105Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-28T10:54:56.105Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69f09200510107e578242b7d"
+  },
+  "userId": {
+    "$oid": "69f087dd98444528eb49d0bd"
+  },
+  "poiCode": "VNM-HUI-001",
+  "purchasePrice": 0,
+  "purchasedAt": {
+    "$date": "2026-04-28T10:54:56.153Z"
+  },
+  "createdAt": {
+    "$date": "2026-04-28T10:54:56.153Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-28T10:54:56.153Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69f09200510107e578242b7e"
+  },
+  "userId": {
+    "$oid": "69f087dd98444528eb49d0bd"
+  },
+  "poiCode": "VNM-SGN-001",
+  "purchasePrice": 0,
+  "purchasedAt": {
+    "$date": "2026-04-28T10:54:56.201Z"
+  },
+  "createdAt": {
+    "$date": "2026-04-28T10:54:56.202Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-28T10:54:56.202Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69f09200510107e578242b7f"
+  },
+  "userId": {
+    "$oid": "69f087dd98444528eb49d0bd"
+  },
+  "poiCode": "VNM-SGN-002",
+  "purchasePrice": 0,
+  "purchasedAt": {
+    "$date": "2026-04-28T10:54:56.250Z"
+  },
+  "createdAt": {
+    "$date": "2026-04-28T10:54:56.250Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-28T10:54:56.250Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69f09200510107e578242b80"
+  },
+  "userId": {
+    "$oid": "69f087dd98444528eb49d0bd"
+  },
+  "poiCode": "VNM-SGN-006",
+  "purchasePrice": 0,
+  "purchasedAt": {
+    "$date": "2026-04-28T10:54:56.299Z"
+  },
+  "createdAt": {
+    "$date": "2026-04-28T10:54:56.299Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-28T10:54:56.299Z"
+  },
+  "__v": 0
+}]

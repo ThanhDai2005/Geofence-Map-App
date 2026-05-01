@@ -1,6 +1,6 @@
 const express = require('express');
 const poiController = require('../controllers/poi.controller');
-const { protect } = require('../middlewares/auth.middleware');
+const { protect, optionalAuth } = require('../middlewares/auth.middleware');
 const { requireRole, ROLES } = require('../middlewares/rbac.middleware');
 
 const router = express.Router();
@@ -8,12 +8,12 @@ const router = express.Router();
 /**
  * POI Routes
  *
- * NOTE: POI QR system has been REMOVED.
- * - No /scan endpoint
- * - No QR token generation
- *
- * Use Zone QR system instead: POST /api/v1/zones/scan
+ * NOTE: /scan endpoint redirects to Zone QR system for backward compatibility
+ * Use Zone QR system: POST /api/v1/zones/scan
  */
+
+// Legacy POI scan endpoint - redirects to zone scan
+router.post('/scan', optionalAuth, poiController.scanLegacy);
 
 router.use(protect);
 

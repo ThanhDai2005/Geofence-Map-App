@@ -327,137 +327,150 @@ export default function OwnerSubmissionsPage() {
 
       {/* Edit Modal */}
       {editModalRow && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 overflow-y-auto">
-          <div className="w-full max-w-2xl rounded-xl border border-slate-200 bg-white p-8 shadow-2xl my-8">
-            <h2 className="text-xl font-bold text-slate-900 mb-6">Chỉnh sửa địa điểm</h2>
-            
-            <form onSubmit={handleEditSubmit} className="space-y-5">
-              <div>
-                <label className="block text-sm font-medium text-slate-700">Mã địa điểm (duy nhất)</label>
-                <input
-                  type="text"
-                  required
-                  disabled
-                  className="mt-1 block w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-slate-500 cursor-not-allowed"
-                  value={editFormData.code}
-                />
-              </div>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+          <div className="w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-xl border border-slate-200 bg-white shadow-2xl">
+            <div className="sticky top-0 bg-white border-b border-slate-200 px-6 py-4 z-10">
+              <h2 className="text-lg font-bold text-slate-900">Chỉnh sửa địa điểm</h2>
+              <p className="text-xs text-slate-500 mt-1">Yêu cầu sẽ được gửi tới Admin phê duyệt</p>
+            </div>
 
-              <div>
-                <label className="block text-sm font-medium text-slate-700">Zone hiện tại</label>
-                <div className="mt-1 block w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-slate-600">
-                  {editModalRow.zone ? (
-                    <span className="font-medium text-slate-900">{editModalRow.zone.name}</span>
-                  ) : (
-                    <span className="text-slate-400 italic">Chưa thuộc zone</span>
-                  )}
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-slate-700">Tên địa điểm</label>
-                <input
-                  type="text"
-                  required
-                  className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 focus:border-emerald-500 focus:ring-emerald-500"
-                  value={editFormData.name}
-                  onChange={(e) => setEditFormData({ ...editFormData, name: e.target.value })}
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-slate-700">Tóm tắt</label>
-                <input
-                  type="text"
-                  className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 focus:border-emerald-500 focus:ring-emerald-500"
-                  value={editFormData.summary}
-                  onChange={(e) => setEditFormData({ ...editFormData, summary: e.target.value })}
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-slate-700">Văn bản ngắn</label>
-                <input
-                  type="text"
-                  className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 focus:border-emerald-500 focus:ring-emerald-500"
-                  value={editFormData.narrationShort}
-                  onChange={(e) => setEditFormData({ ...editFormData, narrationShort: e.target.value })}
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-slate-700">Văn bản dài (premium)</label>
-                <textarea
-                  rows="4"
-                  className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 focus:border-emerald-500 focus:ring-emerald-500"
-                  value={editFormData.narrationLong}
-                  onChange={(e) => setEditFormData({ ...editFormData, narrationLong: e.target.value })}
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
+            <form onSubmit={handleEditSubmit} className="p-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Mã địa điểm */}
                 <div>
-                  <label className="block text-sm font-medium text-slate-700">Vĩ độ</label>
+                  <label className="block text-xs font-medium text-slate-700 mb-1">Mã địa điểm</label>
+                  <input
+                    type="text"
+                    disabled
+                    className="block w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-500 cursor-not-allowed"
+                    value={editFormData.code}
+                  />
+                </div>
+
+                {/* Zone */}
+                <div>
+                  <label className="block text-xs font-medium text-slate-700 mb-1">Zone hiện tại</label>
+                  <div className="block w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600">
+                    {editModalRow.zone ? (
+                      <span className="font-medium text-slate-900">{editModalRow.zone.name}</span>
+                    ) : (
+                      <span className="text-slate-400 italic text-xs">Chưa thuộc zone</span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Tên địa điểm */}
+                <div className="md:col-span-2">
+                  <label className="block text-xs font-medium text-slate-700 mb-1">Tên địa điểm</label>
+                  <input
+                    type="text"
+                    required
+                    className="block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+                    value={editFormData.name}
+                    onChange={(e) => setEditFormData({ ...editFormData, name: e.target.value })}
+                  />
+                </div>
+
+                {/* Tóm tắt */}
+                <div className="md:col-span-2">
+                  <label className="block text-xs font-medium text-slate-700 mb-1">Tóm tắt</label>
+                  <input
+                    type="text"
+                    className="block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+                    value={editFormData.summary}
+                    onChange={(e) => setEditFormData({ ...editFormData, summary: e.target.value })}
+                  />
+                </div>
+
+                {/* Văn bản ngắn */}
+                <div className="md:col-span-2">
+                  <label className="block text-xs font-medium text-slate-700 mb-1">Văn bản ngắn</label>
+                  <textarea
+                    rows="2"
+                    className="block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+                    value={editFormData.narrationShort}
+                    onChange={(e) => setEditFormData({ ...editFormData, narrationShort: e.target.value })}
+                  />
+                </div>
+
+                {/* Văn bản dài */}
+                <div className="md:col-span-2">
+                  <label className="block text-xs font-medium text-slate-700 mb-1">Văn bản dài (premium)</label>
+                  <textarea
+                    rows="3"
+                    className="block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+                    value={editFormData.narrationLong}
+                    onChange={(e) => setEditFormData({ ...editFormData, narrationLong: e.target.value })}
+                  />
+                </div>
+
+                {/* Vĩ độ */}
+                <div>
+                  <label className="block text-xs font-medium text-slate-700 mb-1">Vĩ độ</label>
                   <input
                     type="number"
                     step="any"
                     required
-                    className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 focus:border-emerald-500 focus:ring-emerald-500"
+                    className="block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
                     value={editFormData.lat}
                     onChange={(e) => setEditFormData({ ...editFormData, lat: e.target.value })}
                   />
                 </div>
+
+                {/* Kinh độ */}
                 <div>
-                  <label className="block text-sm font-medium text-slate-700">Kinh độ</label>
+                  <label className="block text-xs font-medium text-slate-700 mb-1">Kinh độ</label>
                   <input
                     type="number"
                     step="any"
                     required
-                    className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 focus:border-emerald-500 focus:ring-emerald-500"
+                    className="block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
                     value={editFormData.lng}
                     onChange={(e) => setEditFormData({ ...editFormData, lng: e.target.value })}
                   />
                 </div>
-              </div>
 
-              <div className="grid grid-cols-2 gap-4">
+                {/* Bán kính */}
                 <div>
-                  <label className="block text-sm font-medium text-slate-700">Bán kính (mét)</label>
+                  <label className="block text-xs font-medium text-slate-700 mb-1">Bán kính (mét)</label>
                   <input
                     type="number"
                     required
-                    className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 focus:border-emerald-500 focus:ring-emerald-500"
+                    className="block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
                     value={editFormData.radius}
                     onChange={(e) => setEditFormData({ ...editFormData, radius: e.target.value })}
                   />
                 </div>
+
+                {/* Priority */}
                 <div>
-                  <label className="block text-sm font-medium text-slate-700">Priority</label>
+                  <label className="block text-xs font-medium text-slate-700 mb-1">Priority</label>
                   <input
                     type="number"
                     required
-                    className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 focus:border-emerald-500 focus:ring-emerald-500"
+                    className="block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
                     value={editFormData.priority}
                     onChange={(e) => setEditFormData({ ...editFormData, priority: e.target.value })}
                   />
                 </div>
               </div>
 
-              <div className="flex justify-end gap-3 pt-6 border-t border-slate-100">
+              {/* Footer buttons */}
+              <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-slate-100">
                 <button
                   type="button"
                   onClick={() => setEditModalRow(null)}
-                  className="rounded-lg border border-slate-300 px-6 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                  className="rounded-lg border border-slate-300 px-5 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
                   disabled={editLoading}
                 >
                   Hủy
                 </button>
                 <button
                   type="submit"
-                  className="rounded-lg bg-emerald-600 px-6 py-2.5 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-50 shadow-sm"
+                  className="rounded-lg bg-emerald-600 px-5 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-50 shadow-sm"
                   disabled={editLoading}
                 >
-                  {editLoading ? 'Đang gửi...' : 'Gửi yêu cầu phê duyệt'}
+                  {editLoading ? 'Đang gửi...' : 'Gửi yêu cầu'}
                 </button>
               </div>
             </form>
